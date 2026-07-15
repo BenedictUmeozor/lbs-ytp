@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# YTP Smart Waste Management MVP
 
-## Getting Started
+A proof-of-concept smart waste management platform for the Bariga pilot.
 
-First, run the development server:
+## Documentation
+
+- [Product requirements document](docs/YTP_Smart_Waste_MVP_PRD.md)
+- [Implementation checklist](docs/IMPLEMENTATION_CHECKLIST.md)
+
+The PRD controls product scope. Unresolved product or architecture decisions in the implementation checklist require product-owner approval before implementation.
+
+## MVP capability boundaries
+
+**Real capabilities when implemented:** one physical smart-bin input, Convex real-time updates, WhatsApp test reporting, public web reporting, landmark geocoding, and AI-assisted report triage.
+
+**Simulated capabilities when implemented:** additional bins, trucks, truck movement, traffic and road-condition penalties, vehicle-health data, maintenance alerts, and demo activity history.
+
+**Future only:** live Lagos traffic, live road-condition intelligence, real fleet telemetry, real predictive maintenance, autonomous dispatch, multi-LGA rollout, native mobile apps, and production LAWMA integration must not be represented as implemented.
+
+## Local development
+
+Use npm only:
+
+```bash
+npm install
+cp .env.example .env.local
+```
+
+Set `NEXT_PUBLIC_CONVEX_URL` in `.env.local` as described in `.env.example`. Running Convex development configures the local deployment values automatically.
+
+Run these commands in separate terminals:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx convex dev
+```

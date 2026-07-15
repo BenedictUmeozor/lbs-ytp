@@ -140,8 +140,8 @@ Update this table after completing each phase.
 
 | Phase    | Status  | Completion date | Handoff summary |
 | -------- | ------- | --------------- | --------------- |
-| Phase 0  | Pending | —               | —               |
-| Phase 1A | Complete | 2026-07-15 | Phase 1A established the project foundation. Convex is installed and connected through a dedicated client provider, generated Convex types are available, shadcn/ui is initialized for Tailwind CSS v4 without UI components, and environment-variable handling is documented safely. No schema, domain logic, seed data, authentication or product UI has been implemented. Phase 1B should begin by defining the Convex schema, indexes, domain status constants and allowed status transitions from the approved PRD. |
+| Phase 0  | Complete | 2026-07-15 | Phase 0 established the PRD and implementation checklist as the project’s scope controls. The README now links to both documents, distinguishes real, simulated and future-only capabilities, and records that unresolved product or architecture decisions require owner approval. |
+| Phase 1A | Complete | 2026-07-15 | Phase 1A established the project foundation. Convex is installed and connected through a dedicated client provider, generated Convex types are available, shadcn/ui is initialized for Tailwind CSS v4 without UI components, and environment-variable handling is documented safely. No schema, domain logic, seed data, authentication or product UI has been implemented. Phase 1B should begin by defining the Convex schema, indexes, domain status constants and allowed status transitions from the approved PRD. The current shadcn CLI’s Radix Nova style was used with explicit product-owner approval because the originally planned New York style was unavailable. |
 | Phase 1B | Pending | —               | —               |
 | Phase 1C | Pending | —               | —               |
 | Phase 2  | Pending | —               | —               |
@@ -163,37 +163,37 @@ Update this table after completing each phase.
 
 ## Documentation
 
-* [ ] Add this file as `docs/IMPLEMENTATION_CHECKLIST.md`.
-* [ ] Link this checklist to the approved PRD.
-* [ ] Add a short README section pointing contributors to the PRD and checklist.
-* [ ] Document the rule that the PRD controls product scope.
-* [ ] Document the rule that unchecked decision items require owner approval.
-* [ ] Document which capabilities are real.
-* [ ] Document which capabilities are simulated.
-* [ ] Document which capabilities are future only.
+* [x] Add this file as `docs/IMPLEMENTATION_CHECKLIST.md`.
+* [x] Link this checklist to the approved PRD.
+* [x] Add a short README section pointing contributors to the PRD and checklist.
+* [x] Document the rule that the PRD controls product scope.
+* [x] Document the rule that unchecked decision items require owner approval.
+* [x] Document which capabilities are real.
+* [x] Document which capabilities are simulated.
+* [x] Document which capabilities are future only.
 
 ## Scope restrictions
 
-* [ ] Do not implement a native mobile application.
-* [ ] Do not implement multiple LGAs.
-* [ ] Do not implement multiple organisations or tenants.
-* [ ] Do not implement billing or payments.
-* [ ] Do not implement SMS or email notifications.
-* [ ] Do not implement advanced workforce scheduling.
-* [ ] Do not implement live traffic feeds.
-* [ ] Do not implement live road-condition feeds.
-* [ ] Do not implement real driver tracking.
-* [ ] Do not implement real fleet telemetry.
-* [ ] Do not implement real predictive maintenance.
-* [ ] Do not implement autonomous dispatch.
-* [ ] Do not implement production LAWMA integration.
-* [ ] Do not implement production WhatsApp messaging outside the approved test environment.
+* [x] Do not implement a native mobile application.
+* [x] Do not implement multiple LGAs.
+* [x] Do not implement multiple organisations or tenants.
+* [x] Do not implement billing or payments.
+* [x] Do not implement SMS or email notifications.
+* [x] Do not implement advanced workforce scheduling.
+* [x] Do not implement live traffic feeds.
+* [x] Do not implement live road-condition feeds.
+* [x] Do not implement real driver tracking.
+* [x] Do not implement real fleet telemetry.
+* [x] Do not implement real predictive maintenance.
+* [x] Do not implement autonomous dispatch.
+* [x] Do not implement production LAWMA integration.
+* [x] Do not implement production WhatsApp messaging outside the approved test environment.
 
 ## Phase completion
 
-* [ ] Scope rules are documented.
-* [ ] The PRD and checklist are discoverable from the repository.
-* [ ] The Phase 0 handoff summary is recorded.
+* [x] Scope rules are documented.
+* [x] The PRD and checklist are discoverable from the repository.
+* [x] The Phase 0 handoff summary is recorded.
 
 ---
 
@@ -223,11 +223,11 @@ Update this table after completing each phase.
 
 ## Project organisation
 
-* [ ] Establish folders for shared UI components.
-* [ ] Establish folders for domain-specific components.
-* [ ] Establish folders for shared constants and domain helpers.
-* [ ] Establish folders for public-app components.
-* [ ] Establish folders for fleet-dashboard components.
+* [x] Establish `components/providers` for application providers required by the current phase.
+* [x] Reserve `components/ui` for shadcn components when the first component is installed; do not add an empty directory.
+* [x] Create domain-specific component folders only when their implementation phase begins.
+* [x] Create public-app component folders only when the public reporting phase begins.
+* [x] Create fleet-dashboard component folders only when the dashboard phase begins.
 * [x] Avoid premature abstraction.
 * [x] Avoid adding a separate API server.
 
