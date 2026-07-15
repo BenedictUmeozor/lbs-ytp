@@ -86,22 +86,30 @@ export function SmartBinsPage() {
         }
       />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <SummaryCard label="Total bins" value={summary.total} icon={Trash2} />
+        <SummaryCard
+          label="Total bins"
+          value={summary.total}
+          icon={Trash2}
+          href="/dashboard/bins"
+        />
         <SummaryCard
           label="Collection required"
           value={summary.collection}
           icon={Trash2}
+          href="/dashboard/bins?status=collection_required"
         />
         <SummaryCard
           label="Critical"
           value={summary.critical}
           icon={AlertTriangle}
+          href="/dashboard/bins?status=critical"
           emphasis="critical"
         />
         <SummaryCard
           label="Offline real devices"
           value={summary.offline}
           icon={AlertTriangle}
+          href="/dashboard/bins?status=offline"
         />
       </div>
       <Card>
