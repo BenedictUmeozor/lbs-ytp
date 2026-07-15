@@ -59,7 +59,7 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 ## 2. Current Status
 
 * **Current phase:** Phase 1C
-* **Current milestone:** Demo dataset, core queries and mutations
+* **Current milestone:** Core queries, overview data and operational mutations
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -394,18 +394,18 @@ Update this table after completing each phase.
 
 ## Settings fields and defaults
 
-* [x] Store approaching-full threshold with a 60% default.
-* [x] Store collection-required threshold with an 80% default.
-* [x] Store critical threshold with a 95% default.
-* [x] Store empty-confirmation threshold with a below-30% default.
-* [x] Store device-offline timeout with a five-minute default.
-* [x] Store duplicate-distance threshold with a 100-metre default.
-* [x] Store maximum route stops with an eight-stop default.
-* [x] Store depot coordinates.
-* [x] Store simulation speed.
-* [x] Store simulated traffic penalty.
-* [x] Store simulated road-condition penalty.
-* [x] Store the 30-second hardware demo interval where required.
+* [x] Define the approaching-full threshold field; its 60% default is seeded in Phase 1C.
+* [x] Define the collection-required threshold field; its 80% default is seeded in Phase 1C.
+* [x] Define the critical threshold field; its 95% default is seeded in Phase 1C.
+* [x] Define the empty-confirmation threshold field; its below-30% rule is seeded in Phase 1C.
+* [x] Define the device-offline timeout field; its five-minute default is seeded in Phase 1C.
+* [x] Define the duplicate-distance field; its 100-metre default is seeded in Phase 1C.
+* [x] Define the maximum-route-stops field; its eight-stop default is seeded in Phase 1C.
+* [x] Define the depot-coordinate fields.
+* [x] Define the simulation-speed field.
+* [x] Define the simulated traffic-penalty field.
+* [x] Define the simulated road-condition-penalty field.
+* [x] Define the hardware-demo-interval field; its 30-second default is seeded in Phase 1C.
 
 ## Indexes and query access
 
@@ -453,36 +453,38 @@ Update this table after completing each phase.
 
 # Phase 1C — Demo Dataset, Core Queries and Mutations
 
+Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now available through idempotent internal seed and reset mutations. The starting state contains 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings. No route exists initially so the primary demonstration can show route generation. Phase 1C-B must add typed core queries, safe public report lookup, overview/map aggregates, notification and settings mutations, and audit-preserving write operations.
+
 ## Seed dataset
 
-* [ ] Seed exactly 10 smart bins in Bariga.
-* [ ] Mark one bin as the real hardware-connected bin.
-* [ ] Mark nine bins as simulated.
-* [ ] Seed one device for the real hardware bin.
-* [ ] Seed simulated devices where needed for demo behaviour.
-* [ ] Seed exactly three simulated trucks.
-* [ ] Seed Truck 01 as available for the main route.
-* [ ] Seed Truck 02 with medium maintenance risk.
-* [ ] Seed Truck 03 as under maintenance with high risk.
-* [ ] Seed six citizen reports.
-* [ ] Seed one depot.
-* [ ] Seed one active route or a resettable active-route demo state.
-* [ ] Seed two prototype maintenance alerts.
-* [ ] Seed one normal truck state.
-* [ ] Seed one medium-risk truck state.
-* [ ] Seed one high-risk truck state.
-* [ ] Seed default settings.
-* [ ] Seed realistic activity events.
-* [ ] Seed realistic dashboard notifications.
-* [ ] Label every simulated record clearly.
+* [x] Seed exactly 10 smart bins in Bariga.
+* [x] Mark one bin as the real hardware-connected bin.
+* [x] Mark nine bins as simulated.
+* [x] Seed one device for the real hardware bin.
+* [x] Seed simulated devices where needed for demo behaviour.
+* [x] Seed exactly three simulated trucks.
+* [x] Seed Truck 01 as available for the main route.
+* [x] Seed Truck 02 with medium maintenance risk.
+* [x] Seed Truck 03 as under maintenance with high risk.
+* [x] Seed six citizen reports.
+* [x] Seed one depot.
+* [x] Seed the approved resettable pre-route demo state; no active route exists initially.
+* [x] Seed two prototype maintenance alerts.
+* [x] Seed one normal truck state.
+* [x] Seed one medium-risk truck state.
+* [x] Seed one high-risk truck state.
+* [x] Seed default settings.
+* [x] Seed realistic activity events.
+* [x] Seed realistic dashboard notifications.
+* [x] Label every simulated record clearly.
 
 ## Seed behaviour
 
-* [ ] Make the seed operation safe to rerun.
-* [ ] Prevent accidental duplicate seed records.
-* [ ] Provide a protected reset operation.
-* [ ] Ensure reset restores the approved demo starting state.
-* [ ] Do not expose reset controls in the public app.
+* [x] Make the seed operation safe to rerun.
+* [x] Prevent accidental duplicate seed records.
+* [x] Provide a protected reset operation.
+* [x] Ensure reset restores the approved demo starting state.
+* [x] Do not expose reset controls in the public app.
 
 ## Core queries
 
@@ -508,9 +510,9 @@ Update this table after completing each phase.
 
 * [ ] Update notification read state.
 * [ ] Update supported settings.
-* [ ] Reset the demo dataset through a protected operation.
-* [ ] Add immutable activity events through a shared helper.
-* [ ] Create dashboard notifications through a shared helper.
+* [x] Reset the demo dataset through a protected operation.
+* [x] Add immutable activity events through a shared helper.
+* [x] Create dashboard notifications through a shared helper.
 * [ ] Preserve audit history for status-changing operations.
 
 ## Overview summary data

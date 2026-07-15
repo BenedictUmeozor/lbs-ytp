@@ -212,3 +212,4 @@ export const relatedEntityIdValidator = v.union(
   v.id("maintenanceAlerts"),
   v.id("settings"),
 );
+export type RelatedEntityId = Infer<typeof relatedEntityIdValidator>;
