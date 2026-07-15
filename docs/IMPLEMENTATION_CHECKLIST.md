@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 1C
-* **Current milestone:** Core queries, overview data and operational mutations
+* **Current phase:** Phase 2
+* **Current milestone:** Authentication decision, dashboard shell and Overview
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -143,7 +143,7 @@ Update this table after completing each phase.
 | Phase 0  | Complete | 2026-07-15 | Phase 0 established the PRD and implementation checklist as the project’s scope controls. The README now links to both documents, distinguishes real, simulated and future-only capabilities, and records that unresolved product or architecture decisions require owner approval. |
 | Phase 1A | Complete | 2026-07-15 | Phase 1A established the project foundation. Convex is installed and connected through a dedicated client provider, generated Convex types are available, shadcn/ui is initialized for Tailwind CSS v4 without UI components, and environment-variable handling is documented safely. No schema, domain logic, seed data, authentication or product UI has been implemented. Phase 1B should begin by defining the Convex schema, indexes, domain status constants and allowed status transitions from the approved PRD. The current shadcn CLI’s Radix Nova style was used with explicit product-owner approval because the originally planned New York style was unavailable. |
 | Phase 1B | Complete | 2026-07-15 | Phase 1B defined the complete Convex schema for the approved MVP, including 14 typed tables, required relationships, reusable domain validators, targeted indexes, approved task-status transitions and safe public report-status mapping. Convex types were regenerated successfully. No records, seed logic, queries, mutations, actions, authentication or product UI were added. Phase 1C should create the idempotent Bariga demo dataset and the typed queries and minimal mutations required by the Overview and later operational phases. |
-| Phase 1C | Pending | —               | —               |
+| Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
 | Phase 2  | Pending | —               | —               |
 | Phase 3  | Pending | —               | —               |
 | Phase 4  | Pending | —               | —               |
@@ -488,53 +488,53 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Core queries
 
-* [ ] Query current settings.
-* [ ] Query all bins.
-* [ ] Query a bin by ID.
-* [ ] Query bin readings chronologically.
-* [ ] Query citizen reports.
-* [ ] Query a report by internal ID.
-* [ ] Query a report by public reference.
-* [ ] Query collection tasks.
-* [ ] Query trucks.
-* [ ] Query routes.
-* [ ] Query the active route.
-* [ ] Query route stops in sequence.
-* [ ] Query maintenance alerts.
-* [ ] Query notifications.
-* [ ] Query recent activity events.
-* [ ] Query overview summary counts.
-* [ ] Query map-ready operational data.
+* [x] Query current settings.
+* [x] Query all bins.
+* [x] Query a bin by ID.
+* [x] Query bin readings chronologically.
+* [x] Query citizen reports.
+* [x] Query a report by internal ID.
+* [x] Query a report by public reference.
+* [x] Query collection tasks.
+* [x] Query trucks.
+* [x] Query routes.
+* [x] Query the active route.
+* [x] Query route stops in sequence.
+* [x] Query maintenance alerts.
+* [x] Query notifications.
+* [x] Query recent activity events.
+* [x] Query overview summary counts.
+* [x] Query map-ready operational data.
 
 ## Core mutations
 
-* [ ] Update notification read state.
-* [ ] Update supported settings.
+* [x] Update notification read state.
+* [x] Update supported settings.
 * [x] Reset the demo dataset through a protected operation.
 * [x] Add immutable activity events through a shared helper.
 * [x] Create dashboard notifications through a shared helper.
-* [ ] Preserve audit history for status-changing operations.
+* [x] Preserve immutable audit history for settings changes introduced in Phase 1C; later operational lifecycle mutations must record their own status-change events transactionally.
 
 ## Overview summary data
 
-* [ ] Return total monitored bins.
-* [ ] Return bins requiring collection.
-* [ ] Return critical bins.
-* [ ] Return open citizen reports.
-* [ ] Return pending collection tasks.
-* [ ] Return active trucks.
-* [ ] Return collections completed today.
-* [ ] Return trucks with maintenance alerts.
+* [x] Return total monitored bins.
+* [x] Return bins requiring collection.
+* [x] Return critical bins.
+* [x] Return open citizen reports.
+* [x] Return pending collection tasks.
+* [x] Return active trucks.
+* [x] Return collections completed today.
+* [x] Return trucks with maintenance alerts.
 
 ## Phase completion
 
-* [ ] The complete approved demo dataset can be created.
-* [ ] Re-running seed does not create duplicate data.
-* [ ] Core data is available through typed Convex queries.
-* [ ] Overview counts derive from current Convex data.
-* [ ] Activity and notification records are queryable.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 1C handoff summary is recorded.
+* [x] The complete approved demo dataset can be created.
+* [x] Re-running seed does not create duplicate data.
+* [x] Core data is available through typed Convex queries.
+* [x] Overview counts derive from current Convex data.
+* [x] Activity and notification records are queryable.
+* [x] Checks for touched files pass.
+* [x] The Phase 1C handoff summary is recorded.
 
 ---
 
