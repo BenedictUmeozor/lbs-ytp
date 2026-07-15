@@ -26,9 +26,35 @@ npm install
 cp .env.example .env.local
 ```
 
-Set `NEXT_PUBLIC_CONVEX_URL` in `.env.local` as described in `.env.example`. Running Convex development configures the local deployment values automatically.
+Set `NEXT_PUBLIC_CONVEX_URL` and the Clerk application values in `.env.local` as described in `.env.example`. Do not commit real keys, issuer domains, passwords, or email addresses.
 
-Run these commands in separate terminals:
+## Authentication
+
+Clerk is the approved fleet-manager authentication provider. Configure the Clerk application for email-and-password sign-in and **Restricted** sign-up mode. Create the demo fleet-manager account manually in Clerk; its email must exactly match `DEMO_FLEET_MANAGER_EMAIL` after trimming and lowercasing.
+
+Set these Next.js variables in `.env.local`:
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/dashboard
+```
+
+Set these server-side variables in the Convex deployment environment, not as `NEXT_PUBLIC_` variables:
+
+```bash
+CLERK_JWT_ISSUER_DOMAIN=
+DEMO_FLEET_MANAGER_EMAIL=
+```
+
+After setting the Convex deployment variables and enabling Clerk's Convex integration, regenerate and deploy the Convex configuration:
+
+```bash
+npx convex dev --once
+```
+
+Run these commands in separate terminals for normal development:
 
 ```bash
 npm run dev

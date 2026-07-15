@@ -59,7 +59,7 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 ## 2. Current Status
 
 * **Current phase:** Phase 2
-* **Current milestone:** Authentication decision, dashboard shell and Overview
+* **Current milestone:** Authentication implementation, dashboard shell and Overview
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -94,11 +94,11 @@ The coding agent must not resolve these decisions independently.
 
 ### D-01 — Fleet-manager authentication
 
-* [ ] Choose the fleet-manager authentication approach.
-* [ ] Confirm how the demo fleet-manager account will be created.
-* [ ] Confirm how protected dashboard routes will be enforced.
+* [x] Choose the fleet-manager authentication approach.
+* [x] Confirm how the demo fleet-manager account will be created.
+* [x] Confirm how protected dashboard routes will be enforced.
 * **Required before:** Phase 2
-* **Status:** Pending owner decision
+* **Status:** Approved — Clerk with Convex. See [D-01](decisions/D-01_FLEET_MANAGER_AUTHENTICATION.md).
 
 ### D-02 — Report photo storage
 
@@ -143,8 +143,8 @@ Update this table after completing each phase.
 | Phase 0  | Complete | 2026-07-15 | Phase 0 established the PRD and implementation checklist as the project’s scope controls. The README now links to both documents, distinguishes real, simulated and future-only capabilities, and records that unresolved product or architecture decisions require owner approval. |
 | Phase 1A | Complete | 2026-07-15 | Phase 1A established the project foundation. Convex is installed and connected through a dedicated client provider, generated Convex types are available, shadcn/ui is initialized for Tailwind CSS v4 without UI components, and environment-variable handling is documented safely. No schema, domain logic, seed data, authentication or product UI has been implemented. Phase 1B should begin by defining the Convex schema, indexes, domain status constants and allowed status transitions from the approved PRD. The current shadcn CLI’s Radix Nova style was used with explicit product-owner approval because the originally planned New York style was unavailable. |
 | Phase 1B | Complete | 2026-07-15 | Phase 1B defined the complete Convex schema for the approved MVP, including 14 typed tables, required relationships, reusable domain validators, targeted indexes, approved task-status transitions and safe public report-status mapping. Convex types were regenerated successfully. No records, seed logic, queries, mutations, actions, authentication or product UI were added. Phase 1C should create the idempotent Bariga demo dataset and the typed queries and minimal mutations required by the Overview and later operational phases. |
-| Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
-| Phase 2  | Pending | —               | —               |
+| Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains one fleet-manager user, 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
+| Phase 2  | In progress | 2026-07-15 | Phase 2A implemented the Clerk and Convex authentication foundation: restricted manual demo-account flow, normalized Convex fleet-manager authorization, protected `/dashboard` routes, sign-in/sign-out, and a safe current-user query. Phase 2B should build the dashboard shell and Overview using authenticated Convex queries protected by `requireFleetManager()`. |
 | Phase 3  | Pending | —               | —               |
 | Phase 4  | Pending | —               | —               |
 | Phase 5  | Pending | —               | —               |
@@ -459,7 +459,7 @@ Update this table after completing each phase.
 
 # Phase 1C — Demo Dataset, Core Queries and Mutations
 
-Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now available through idempotent internal seed and reset mutations. The starting state contains 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings. No route exists initially so the primary demonstration can show route generation. Phase 1C-B must add typed core queries, safe public report lookup, overview/map aggregates, notification and settings mutations, and audit-preserving write operations.
+Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now available through idempotent internal seed and reset mutations. The starting state contains one fleet-manager user, 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings. No route exists initially so the primary demonstration can show route generation. Phase 1C-B must add typed core queries, safe public report lookup, overview/map aggregates, notification and settings mutations, and audit-preserving write operations.
 
 ## Seed dataset
 
@@ -548,17 +548,17 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Decision dependency
 
-* [ ] Decision D-01 has been resolved.
+* [x] Decision D-01 has been resolved.
 
 ## Authentication
 
-* [ ] Add fleet-manager authentication using the approved approach.
-* [ ] Create the approved demo fleet-manager account flow.
-* [ ] Protect all fleet-dashboard routes.
-* [ ] Keep public-report routes accessible without authentication.
-* [ ] Prevent public users from accessing dashboard data.
-* [ ] Add sign-in and sign-out flows.
-* [ ] Handle unauthenticated dashboard access safely.
+* [x] Add fleet-manager authentication using the approved approach.
+* [x] Create the approved demo fleet-manager account flow.
+* [x] Protect all fleet-dashboard routes.
+* [x] Keep public-report routes accessible without authentication.
+* [x] Prevent public users from accessing dashboard data.
+* [x] Add sign-in and sign-out flows.
+* [x] Handle unauthenticated dashboard access safely.
 
 ## Dashboard shell
 

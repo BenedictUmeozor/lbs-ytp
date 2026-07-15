@@ -12,6 +12,7 @@ import {
   demoTrucks,
   globalSettings,
 } from "./domain/demo_data";
+import { normalizeEmail } from "./domain/auth";
 import { insertActivityEvent, insertNotification } from "./domain/write_helpers";
 
 const MVP_TABLES = [
@@ -92,8 +93,43 @@ async function hasAnyMvpRecords(ctx: MutationCtx): Promise<boolean> {
   return false;
 }
 
-async function insertDemoDataset(ctx: MutationCtx, now: number): Promise<void> {
+function getDemoFleetManagerEmail(): string {
+  const configuredEmail = process.env.DEMO_FLEET_MANAGER_EMAIL;
+  if (configuredEmail === undefined || configuredEmail.trim().length === 0) {
+    throw new Error("DEMO_FLEET_MANAGER_EMAIL must be configured before seeding demo data.");
+  }
+
+  return normalizeEmail(configuredEmail);
+}
+
+async function ensureDemoFleetManager(
+  ctx: MutationCtx,
+  email: string,
+): Promise<void> {
+  const existingUser = await ctx.db
+    .query("users")
+    .withIndex("by_email", (query) => query.eq("email", email))
+    .unique();
+
+  if (existingUser === null) {
+    await ctx.db.insert("users", {
+      name: "Demo Fleet Manager",
+      email,
+      role: "fleet_manager",
+    });
+    return;
+  }
+
+  await ctx.db.patch(existingUser._id, {
+    name: "Demo Fleet Manager",
+    email,
+    role: "fleet_manager",
+  });
+}
+
+async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManagerEmail: string): Promise<void> {
   await ctx.db.insert("settings", globalSettings);
+  await ensureDemoFleetManager(ctx, demoFleetManagerEmail);
 
   const truckIds = new Map<string, Id<"trucks">>();
   for (const truck of demoTrucks) {
@@ -361,12 +397,14 @@ export const seedDemoData = internalMutation({
   }),
   handler: async (ctx) => {
     const now = Date.now();
+    const demoFleetManagerEmail = getDemoFleetManagerEmail();
     const settings = await ctx.db
       .query("settings")
       .withIndex("by_key", (query) => query.eq("key", "global"))
       .first();
 
     if (settings !== null) {
+      await ensureDemoFleetManager(ctx, demoFleetManagerEmail);
       return { status: "already_seeded" as const, counts: await getDatasetCounts(ctx) };
     }
 
@@ -376,7 +414,7 @@ export const seedDemoData = internalMutation({
       );
     }
 
-    await insertDemoDataset(ctx, now);
+    await insertDemoDataset(ctx, now, demoFleetManagerEmail);
     return { status: "seeded" as const, counts: await getDatasetCounts(ctx) };
   },
 });
@@ -390,8 +428,9 @@ export const resetDemoData = internalMutation({
   }),
   handler: async (ctx) => {
     const now = Date.now();
+    const demoFleetManagerEmail = getDemoFleetManagerEmail();
     const deletedCounts = await clearAllMvpTables(ctx);
-    await insertDemoDataset(ctx, now);
+    await insertDemoDataset(ctx, now, demoFleetManagerEmail);
 
     return {
       status: "reset" as const,
