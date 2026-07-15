@@ -149,7 +149,7 @@ export function SmartBinsPage() {
         />
       )}
       {detail !== undefined && detail !== null && (
-        <BinDetailPanel detail={detail} />
+        <BinDetailPanel key={detail.row.id} detail={detail} />
       )}
     </div>
   );

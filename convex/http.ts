@@ -1,4 +1,5 @@
 import { httpRouter } from "convex/server";
+import { ConvexError } from "convex/values";
 
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
@@ -10,6 +11,21 @@ function json(body: Record<string, unknown>, status: number) {
     status,
     headers: { "content-type": "application/json" },
   });
+}
+
+function isHardwareError(
+  error: unknown,
+): error is ConvexError<{ code: "NOT_FOUND" | "CONFLICT"; message: string }> {
+  if (!(error instanceof ConvexError)) return false;
+  const data = error.data;
+  return (
+    data !== null &&
+    typeof data === "object" &&
+    "code" in data &&
+    "message" in data &&
+    (data.code === "NOT_FOUND" || data.code === "CONFLICT") &&
+    typeof data.message === "string"
+  );
 }
 
 http.route({
@@ -91,12 +107,11 @@ http.route({
         200,
       );
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unexpected internal failure.";
-      if (message.startsWith("NOT_FOUND:"))
-        return json({ ok: false, error: message.slice(11) }, 404);
-      if (message.startsWith("CONFLICT:"))
-        return json({ ok: false, error: message.slice(10) }, 409);
+      if (isHardwareError(error))
+        return json(
+          { ok: false, error: error.data.message },
+          error.data.code === "NOT_FOUND" ? 404 : 409,
+        );
       return json({ ok: false, error: "Unable to process the reading." }, 500);
     }
   }),

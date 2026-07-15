@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { internalMutation } from "./_generated/server";
 import {
@@ -51,22 +51,29 @@ export const ingestReading = internalMutation({
         q.eq("deviceIdentifier", args.deviceIdentifier),
       )
       .unique();
-    if (device === null) throw new Error("NOT_FOUND: Unknown device.");
+    if (device === null)
+      throw new ConvexError({ code: "NOT_FOUND", message: "Unknown device." });
     const bin = await ctx.db
       .query("bins")
       .withIndex("by_displayId", (q) => q.eq("displayId", args.binDisplayId))
       .unique();
-    if (bin === null) throw new Error("NOT_FOUND: Unknown bin.");
+    if (bin === null)
+      throw new ConvexError({ code: "NOT_FOUND", message: "Unknown bin." });
     if (device.assignedBinId !== bin._id)
-      throw new Error("CONFLICT: Device is not assigned to this bin.");
+      throw new ConvexError({
+        code: "CONFLICT",
+        message: "Device is not assigned to this bin.",
+      });
     if (device.source !== "real")
-      throw new Error(
-        "CONFLICT: Simulated devices cannot submit hardware readings.",
-      );
+      throw new ConvexError({
+        code: "CONFLICT",
+        message: "Simulated devices cannot submit hardware readings.",
+      });
     if (device.status === "inactive")
-      throw new Error(
-        "CONFLICT: Inactive devices cannot submit hardware readings.",
-      );
+      throw new ConvexError({
+        code: "CONFLICT",
+        message: "Inactive devices cannot submit hardware readings.",
+      });
 
     const duplicate = await ctx.db
       .query("sensorReadings")
@@ -79,9 +86,11 @@ export const ingestReading = internalMutation({
         duplicate.binId !== bin._id ||
         duplicate.fillPercentage !== args.fillPercentage
       )
-        throw new Error(
-          "CONFLICT: A different reading already exists for this device and recordedAt value.",
-        );
+        throw new ConvexError({
+          code: "CONFLICT",
+          message:
+            "A different reading already exists for this device and recordedAt value.",
+        });
       return {
         duplicate: true,
         appliedToCurrentState: false,

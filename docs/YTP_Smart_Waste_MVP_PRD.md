@@ -952,9 +952,9 @@ The smart-bin device sends:
 ```json
 {
   "deviceId": "device-001",
-  "binId": "BG-003",
+  "binId": "BG-001",
   "fillPercentage": 84,
-  "recordedAt": "2026-07-15T11:30:00Z"
+  "recordedAt": "2026-07-16T11:30:00Z"
 }
 ```
 
