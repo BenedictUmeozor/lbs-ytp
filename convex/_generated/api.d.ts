@@ -8,13 +8,19 @@
  * @module
  */
 
+import type * as domain_status_rules from "../domain/status_rules.js";
+import type * as domain_validators from "../domain/validators.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  "domain/status_rules": typeof domain_status_rules;
+  "domain/validators": typeof domain_validators;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.

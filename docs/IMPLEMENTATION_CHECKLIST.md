@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 1B
-* **Current milestone:** Convex schema and domain rules
+* **Current phase:** Phase 1C
+* **Current milestone:** Demo dataset, core queries and mutations
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -142,7 +142,7 @@ Update this table after completing each phase.
 | -------- | ------- | --------------- | --------------- |
 | Phase 0  | Complete | 2026-07-15 | Phase 0 established the PRD and implementation checklist as the project’s scope controls. The README now links to both documents, distinguishes real, simulated and future-only capabilities, and records that unresolved product or architecture decisions require owner approval. |
 | Phase 1A | Complete | 2026-07-15 | Phase 1A established the project foundation. Convex is installed and connected through a dedicated client provider, generated Convex types are available, shadcn/ui is initialized for Tailwind CSS v4 without UI components, and environment-variable handling is documented safely. No schema, domain logic, seed data, authentication or product UI has been implemented. Phase 1B should begin by defining the Convex schema, indexes, domain status constants and allowed status transitions from the approved PRD. The current shadcn CLI’s Radix Nova style was used with explicit product-owner approval because the originally planned New York style was unavailable. |
-| Phase 1B | Pending | —               | —               |
+| Phase 1B | Complete | 2026-07-15 | Phase 1B defined the complete Convex schema for the approved MVP, including 14 typed tables, required relationships, reusable domain validators, targeted indexes, approved task-status transitions and safe public report-status mapping. Convex types were regenerated successfully. No records, seed logic, queries, mutations, actions, authentication or product UI were added. Phase 1C should create the idempotent Bariga demo dataset and the typed queries and minimal mutations required by the Overview and later operational phases. |
 | Phase 1C | Pending | —               | —               |
 | Phase 2  | Pending | —               | —               |
 | Phase 3  | Pending | —               | —               |
@@ -248,206 +248,206 @@ Update this table after completing each phase.
 
 ## Core tables
 
-* [ ] Create the `users` table.
-* [ ] Create the `devices` table.
-* [ ] Create the `bins` table.
-* [ ] Create the `sensorReadings` table.
-* [ ] Create the `citizenReports` table.
-* [ ] Create the `whatsappConversations` table.
-* [ ] Create the `collectionTasks` table.
-* [ ] Create the `trucks` table.
-* [ ] Create the `routes` table.
-* [ ] Create the `routeStops` table.
-* [ ] Create the `maintenanceAlerts` table.
-* [ ] Create the `notifications` table.
-* [ ] Create the `activityEvents` table.
-* [ ] Create the `settings` table.
+* [x] Create the `users` table.
+* [x] Create the `devices` table.
+* [x] Create the `bins` table.
+* [x] Create the `sensorReadings` table.
+* [x] Create the `citizenReports` table.
+* [x] Create the `whatsappConversations` table.
+* [x] Create the `collectionTasks` table.
+* [x] Create the `trucks` table.
+* [x] Create the `routes` table.
+* [x] Create the `routeStops` table.
+* [x] Create the `maintenanceAlerts` table.
+* [x] Create the `notifications` table.
+* [x] Create the `activityEvents` table.
+* [x] Create the `settings` table.
 
 ## User fields
 
-* [ ] Store name.
-* [ ] Store email.
-* [ ] Store role.
-* [ ] Store creation time.
+* [x] Store name.
+* [x] Store email.
+* [x] Store role.
+* [x] Store creation time.
 
 ## Device fields
 
-* [ ] Store unique device identifier.
-* [ ] Store assigned bin ID.
-* [ ] Store device status.
-* [ ] Store last-seen time.
-* [ ] Store whether the device is real or simulated.
+* [x] Store unique device identifier.
+* [x] Store assigned bin ID.
+* [x] Store device status.
+* [x] Store last-seen time.
+* [x] Store whether the device is real or simulated.
 
 ## Bin fields
 
-* [ ] Store display ID.
-* [ ] Store name.
-* [ ] Store address.
-* [ ] Store latitude and longitude.
-* [ ] Store current fill percentage.
-* [ ] Store current bin status.
-* [ ] Store last-reading time.
-* [ ] Store last-collection time.
-* [ ] Store linked device ID.
-* [ ] Store whether the bin is real or simulated.
-* [ ] Store awaiting-empty-confirmation state where required.
+* [x] Store display ID.
+* [x] Store name.
+* [x] Store address.
+* [x] Store latitude and longitude.
+* [x] Store current fill percentage.
+* [x] Store current bin status.
+* [x] Store last-reading time.
+* [x] Store last-collection time.
+* [x] Store linked device ID.
+* [x] Store whether the bin is real or simulated.
+* [x] Store awaiting-empty-confirmation state where required.
 
 ## Sensor-reading fields
 
-* [ ] Store device ID.
-* [ ] Store bin ID.
-* [ ] Store fill percentage.
-* [ ] Store device-recorded time.
-* [ ] Store server-received time.
-* [ ] Store unusual-reading flag.
+* [x] Store device ID.
+* [x] Store bin ID.
+* [x] Store fill percentage.
+* [x] Store device-recorded time.
+* [x] Store server-received time.
+* [x] Store unusual-reading flag.
 
 ## Citizen-report fields
 
-* [ ] Store unique public reference number.
-* [ ] Store report source.
-* [ ] Preserve the original message.
-* [ ] Store category.
-* [ ] Store priority.
-* [ ] Store operational summary.
-* [ ] Store landmark text.
-* [ ] Store latitude and longitude.
-* [ ] Store optional photo reference.
-* [ ] Store whether collection is required.
-* [ ] Store whether clarification is required.
-* [ ] Store AI-processing status.
-* [ ] Store report status.
-* [ ] Store linked task ID.
-* [ ] Store linked bin ID.
-* [ ] Store creation and resolution times.
-* [ ] Store duplicate-candidate relationships without automatic merging.
+* [x] Store unique public reference number.
+* [x] Store report source.
+* [x] Preserve the original message.
+* [x] Store category.
+* [x] Store priority.
+* [x] Store operational summary.
+* [x] Store landmark text.
+* [x] Store latitude and longitude.
+* [x] Store optional photo reference.
+* [x] Store whether collection is required.
+* [x] Store whether clarification is required.
+* [x] Store AI-processing status.
+* [x] Store report status.
+* [x] Store linked task ID.
+* [x] Store linked bin ID.
+* [x] Store creation and resolution times.
+* [x] Store duplicate-candidate relationships without automatic merging.
 
 ## WhatsApp-conversation fields
 
-* [ ] Store WhatsApp user identifier.
-* [ ] Store current conversation state.
-* [ ] Store draft description.
-* [ ] Store draft landmark.
-* [ ] Store draft latitude and longitude.
-* [ ] Store draft photo reference.
-* [ ] Store last-message time.
+* [x] Store WhatsApp user identifier.
+* [x] Store current conversation state.
+* [x] Store draft description.
+* [x] Store draft landmark.
+* [x] Store draft latitude and longitude.
+* [x] Store draft photo reference.
+* [x] Store last-message time.
 
 ## Collection-task fields
 
-* [ ] Store display ID.
-* [ ] Store source type.
-* [ ] Store source ID.
-* [ ] Store latitude and longitude.
-* [ ] Store priority.
-* [ ] Store reason.
-* [ ] Store task status.
-* [ ] Store assigned truck ID.
-* [ ] Store route ID.
-* [ ] Store creation and completion times.
+* [x] Store display ID.
+* [x] Store source type.
+* [x] Store source ID.
+* [x] Store latitude and longitude.
+* [x] Store priority.
+* [x] Store reason.
+* [x] Store task status.
+* [x] Store assigned truck ID.
+* [x] Store route ID.
+* [x] Store creation and completion times.
 
 ## Truck fields
 
-* [ ] Store display ID.
-* [ ] Store driver name.
-* [ ] Store status.
-* [ ] Store current latitude and longitude.
-* [ ] Store assigned route ID.
-* [ ] Store capacity indicator.
-* [ ] Store maintenance risk.
-* [ ] Store mileage since service.
-* [ ] Store last-service date.
-* [ ] Store battery status.
-* [ ] Store engine-health score.
-* [ ] Mark truck data as simulated.
+* [x] Store display ID.
+* [x] Store driver name.
+* [x] Store status.
+* [x] Store current latitude and longitude.
+* [x] Store assigned route ID.
+* [x] Store capacity indicator.
+* [x] Store maintenance risk.
+* [x] Store mileage since service.
+* [x] Store last-service date.
+* [x] Store battery status.
+* [x] Store engine-health score.
+* [x] Mark truck data as simulated.
 
 ## Route and route-stop fields
 
-* [ ] Store route display ID.
-* [ ] Store assigned truck ID.
-* [ ] Store depot coordinates.
-* [ ] Store route status.
-* [ ] Store ordered stop IDs.
-* [ ] Store current stop index.
-* [ ] Store estimated distance.
-* [ ] Store estimated duration.
-* [ ] Store simulated traffic penalty.
-* [ ] Store simulated road-condition penalty.
-* [ ] Store created, started and completed times.
-* [ ] Store route-stop sequence number.
-* [ ] Store route-stop status.
-* [ ] Store route-stop arrival and completion times.
+* [x] Store route display ID.
+* [x] Store assigned truck ID.
+* [x] Store depot coordinates.
+* [x] Store route status.
+* [x] Store ordered stop IDs.
+* [x] Store current stop index.
+* [x] Store estimated distance.
+* [x] Store estimated duration.
+* [x] Store simulated traffic penalty.
+* [x] Store simulated road-condition penalty.
+* [x] Store created, started and completed times.
+* [x] Store route-stop sequence number.
+* [x] Store route-stop status.
+* [x] Store route-stop arrival and completion times.
 
 ## Maintenance, notification and activity fields
 
-* [ ] Store maintenance-alert truck ID.
-* [ ] Store maintenance risk.
-* [ ] Store reason.
-* [ ] Store recommendation.
-* [ ] Store simulated flag.
-* [ ] Store created and resolved times.
-* [ ] Store notification type and severity.
-* [ ] Store notification title and description.
-* [ ] Store related entity type and ID.
-* [ ] Store notification read time.
-* [ ] Store immutable activity-event type and description.
-* [ ] Store activity related entity type and ID.
-* [ ] Store activity creation time.
+* [x] Store maintenance-alert truck ID.
+* [x] Store maintenance risk.
+* [x] Store reason.
+* [x] Store recommendation.
+* [x] Store simulated flag.
+* [x] Store created and resolved times.
+* [x] Store notification type and severity.
+* [x] Store notification title and description.
+* [x] Store related entity type and ID.
+* [x] Store notification read time.
+* [x] Store immutable activity-event type and description.
+* [x] Store activity related entity type and ID.
+* [x] Store activity creation time.
 
 ## Settings fields and defaults
 
-* [ ] Store approaching-full threshold with a 60% default.
-* [ ] Store collection-required threshold with an 80% default.
-* [ ] Store critical threshold with a 95% default.
-* [ ] Store empty-confirmation threshold with a below-30% default.
-* [ ] Store device-offline timeout with a five-minute default.
-* [ ] Store duplicate-distance threshold with a 100-metre default.
-* [ ] Store maximum route stops with an eight-stop default.
-* [ ] Store depot coordinates.
-* [ ] Store simulation speed.
-* [ ] Store simulated traffic penalty.
-* [ ] Store simulated road-condition penalty.
-* [ ] Store the 30-second hardware demo interval where required.
+* [x] Store approaching-full threshold with a 60% default.
+* [x] Store collection-required threshold with an 80% default.
+* [x] Store critical threshold with a 95% default.
+* [x] Store empty-confirmation threshold with a below-30% default.
+* [x] Store device-offline timeout with a five-minute default.
+* [x] Store duplicate-distance threshold with a 100-metre default.
+* [x] Store maximum route stops with an eight-stop default.
+* [x] Store depot coordinates.
+* [x] Store simulation speed.
+* [x] Store simulated traffic penalty.
+* [x] Store simulated road-condition penalty.
+* [x] Store the 30-second hardware demo interval where required.
 
 ## Indexes and query access
 
-* [ ] Add indexes for unique device identifiers.
-* [ ] Add indexes for bin display IDs.
-* [ ] Add indexes for report references.
-* [ ] Add indexes for task display IDs.
-* [ ] Add indexes for truck display IDs.
-* [ ] Add indexes for route display IDs.
-* [ ] Add indexes for statuses used by dashboard filters.
-* [ ] Add indexes for active tasks by source.
-* [ ] Add indexes for route stops by route and sequence.
-* [ ] Add indexes for time-ordered readings and activity events.
-* [ ] Add indexes required for WhatsApp conversation lookup.
-* [ ] Avoid speculative indexes not used by approved queries.
+* [x] Add indexes for unique device identifiers.
+* [x] Add indexes for bin display IDs.
+* [x] Add indexes for report references.
+* [x] Add indexes for task display IDs.
+* [x] Add indexes for truck display IDs.
+* [x] Add indexes for route display IDs.
+* [x] Add indexes for statuses used by dashboard filters.
+* [x] Add indexes for active tasks by source.
+* [x] Add indexes for route stops by route and sequence.
+* [x] Add indexes for time-ordered readings and activity events.
+* [x] Add indexes required for WhatsApp conversation lookup.
+* [x] Avoid speculative indexes not used by approved queries.
 
 ## Domain constants and transitions
 
-* [ ] Define bin statuses.
-* [ ] Define device statuses.
-* [ ] Define report categories.
-* [ ] Define report priorities.
-* [ ] Define internal report statuses.
-* [ ] Define public report statuses.
-* [ ] Define task statuses.
-* [ ] Define allowed task transitions.
-* [ ] Define truck statuses.
-* [ ] Define route statuses.
-* [ ] Define maintenance-risk levels.
-* [ ] Define WhatsApp conversation states.
-* [ ] Implement internal-to-public report-status mapping.
-* [ ] Prevent mutation of completed and cancelled tasks except approved manager notes.
+* [x] Define bin statuses.
+* [x] Define device statuses.
+* [x] Define report categories.
+* [x] Define report priorities.
+* [x] Define internal report statuses.
+* [x] Define public report statuses.
+* [x] Define task statuses.
+* [x] Define allowed task transitions.
+* [x] Define truck statuses.
+* [x] Define route statuses.
+* [x] Define maintenance-risk levels.
+* [x] Define WhatsApp conversation states.
+* [x] Implement internal-to-public report-status mapping.
+* [x] Completed and cancelled task statuses have no outgoing transitions.
 
 ## Phase completion
 
-* [ ] All PRD entities are represented.
-* [ ] Required relationships are represented.
-* [ ] Required status values are centralised.
-* [ ] Invalid status transitions can be rejected.
-* [ ] Schema generation succeeds.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 1B handoff summary is recorded.
+* [x] All PRD entities are represented.
+* [x] Required relationships are represented.
+* [x] Required status values are centralised.
+* [x] Invalid status transitions can be rejected.
+* [x] Schema generation succeeds.
+* [x] Checks for touched files pass.
+* [x] The Phase 1B handoff summary is recorded.
 
 ---
 
