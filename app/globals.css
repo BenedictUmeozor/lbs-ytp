@@ -117,6 +117,54 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.operations-map-depot-icon,
+.operations-map-stop-icon {
+  background: transparent;
+  border: 0;
+}
+
+.operations-map-depot-icon span,
+.operations-map-stop-icon span {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  border: 2px solid white;
+  border-radius: 9999px;
+  background: #4338ca;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+}
+
+.operations-map-depot-icon span {
+  min-width: 48px;
+  border-radius: 6px;
+}
+
+.operations-map-stop-icon .operations-map-stop-completed {
+  background: #64748b;
+  text-decoration: line-through;
+}
+
+.operations-map-stop-icon .operations-map-selected {
+  outline: 3px solid #111827;
+  outline-offset: 2px;
+}
+
+.operations-map-critical-marker {
+  animation: operations-map-critical-pulse 1.8s ease-out infinite;
+}
+
+@keyframes operations-map-critical-pulse {
+  50% { stroke-width: 5; stroke-opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operations-map-critical-marker { animation: none; }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

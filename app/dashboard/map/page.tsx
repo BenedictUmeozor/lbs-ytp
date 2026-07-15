@@ -1,5 +1,5 @@
-import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
+import { OperationsMapPage } from "@/components/maps/operations-map-page";
 
 export default function MapPage() {
-  return <DashboardPlaceholder title="Map" description="Live operational mapping will be implemented in Phase 3." />;
+  return <OperationsMapPage />;
 }

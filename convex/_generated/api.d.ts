@@ -19,6 +19,7 @@ import type * as domain_validators from "../domain/validators.js";
 import type * as domain_write_helpers from "../domain/write_helpers.js";
 import type * as maintenance from "../maintenance.js";
 import type * as notifications from "../notifications.js";
+import type * as operationsMap from "../operationsMap.js";
 import type * as reports from "../reports.js";
 import type * as routes from "../routes.js";
 import type * as seed from "../seed.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   "domain/write_helpers": typeof domain_write_helpers;
   maintenance: typeof maintenance;
   notifications: typeof notifications;
+  operationsMap: typeof operationsMap;
   reports: typeof reports;
   routes: typeof routes;
   seed: typeof seed;

@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 3
-* **Current milestone:** Live Operations Map
+* **Current phase:** Phase 4
+* **Current milestone:** Smart-Bin Monitoring and Hardware Flow
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -145,7 +145,7 @@ Update this table after completing each phase.
 | Phase 1B | Complete | 2026-07-15 | Phase 1B defined the complete Convex schema for the approved MVP, including 14 typed tables, required relationships, reusable domain validators, targeted indexes, approved task-status transitions and safe public report-status mapping. Convex types were regenerated successfully. No records, seed logic, queries, mutations, actions, authentication or product UI were added. Phase 1C should create the idempotent Bariga demo dataset and the typed queries and minimal mutations required by the Overview and later operational phases. |
 | Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains one fleet-manager user, 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
 | Phase 2  | Complete | 2026-07-15 | Phase 2A implemented the Clerk and Convex authentication foundation: restricted manual demo-account flow, normalized Convex fleet-manager authorization, protected `/dashboard` routes, sign-in/sign-out, and a safe current-user query. Phase 2B built the persistent dashboard shell, reusable dashboard UI primitives, one authenticated real-time `dashboard.getOverviewData` query protected by `requireFleetManager()`, the complete Overview page with a non-interactive OpenStreetMap/Leaflet preview, and protected placeholder pages for every later dashboard section. The correction pass improved authentication failure handling, generic runtime errors, empty states and shared map data loading. Phase 3 should extend the reusable Leaflet map foundation into the full interactive operations map. |
-| Phase 3  | Pending | —               | —               |
+| Phase 3  | Complete | 2026-07-15 | Dedicated protected map query with live Convex subscriptions, an interactive Leaflet map, bins/reports/trucks/depot/route layers, filters and search, live selected-item details, a keyboard-accessible operational list, and read-only active-route rendering. Route re-optimisation remains Phase 9; stop completion remains Phase 10. |
 | Phase 4  | Pending | —               | —               |
 | Phase 5  | Pending | —               | —               |
 | Phase 6  | Pending | —               | —               |
@@ -630,129 +630,129 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Map foundation
 
-* [ ] Install Leaflet and required React integration.
-* [ ] Load the interactive map only in the browser.
-* [ ] Use OpenStreetMap tiles.
-* [ ] Display required OpenStreetMap attribution.
-* [ ] Centre the map on the approved Bariga pilot area.
-* [ ] Ensure the map does not break server rendering.
-* [ ] Provide a non-map text alternative for operational items.
+* [x] Install Leaflet and required React integration.
+* [x] Load the interactive map only in the browser.
+* [x] Use OpenStreetMap tiles.
+* [x] Display required OpenStreetMap attribution.
+* [x] Centre the map on the approved Bariga pilot area.
+* [x] Ensure the map does not break server rendering.
+* [x] Provide a non-map text alternative for operational items.
 
 ## Map data layers
 
-* [ ] Display all smart-bin markers.
-* [ ] Display all citizen-report markers with valid coordinates.
-* [ ] Display all truck markers.
-* [ ] Display the depot.
-* [ ] Display the active-route line.
-* [ ] Display numbered route stops.
-* [ ] Update markers through Convex subscriptions.
+* [x] Display all smart-bin markers.
+* [x] Display all citizen-report markers with valid coordinates.
+* [x] Display all truck markers.
+* [x] Display the depot.
+* [x] Display the active-route line.
+* [x] Display numbered route stops.
+* [x] Update markers through Convex subscriptions.
 
 ## Marker states
 
-* [ ] Use green for normal bins.
-* [ ] Use yellow for approaching-full bins.
-* [ ] Use red for collection-required bins.
-* [ ] Use dark red with a visible critical treatment for critical bins.
-* [ ] Use purple for citizen reports.
-* [ ] Use blue for the active truck.
-* [ ] Use a distinguishable light-blue treatment for idle trucks.
-* [ ] Use a recognisable depot marker.
-* [ ] Include a text label or accessible status alongside colour.
+* [x] Use green for normal bins.
+* [x] Use yellow for approaching-full bins.
+* [x] Use red for collection-required bins.
+* [x] Use dark red with a visible critical treatment for critical bins.
+* [x] Use purple for citizen reports.
+* [x] Use blue for the active truck.
+* [x] Use a distinguishable light-blue treatment for idle trucks.
+* [x] Use a recognisable depot marker.
+* [x] Include a text label or accessible status alongside colour.
 
 ## Marker details
 
-* [ ] Show bin ID.
+* [x] Show bin ID.
 
-* [ ] Show bin address.
+* [x] Show bin address.
 
-* [ ] Show bin fill percentage.
+* [x] Show bin fill percentage.
 
-* [ ] Show bin status.
+* [x] Show bin status.
 
-* [ ] Show bin last-reading time.
+* [x] Show bin last-reading time.
 
-* [ ] Show device status.
+* [x] Show device status.
 
-* [ ] Show active bin task.
+* [x] Show active bin task.
 
-* [ ] Show last collection time.
+* [x] Show last collection time.
 
-* [ ] Link to full bin details.
+* [x] Link to full bin details.
 
-* [ ] Show report reference.
+* [x] Show report reference.
 
-* [ ] Show report category.
+* [x] Show report category.
 
-* [ ] Show report priority.
+* [x] Show report priority.
 
-* [ ] Show report summary.
+* [x] Show report summary.
 
-* [ ] Show report source.
+* [x] Show report source.
 
-* [ ] Show report location.
+* [x] Show report location.
 
-* [ ] Show report time.
+* [x] Show report time.
 
-* [ ] Show linked task.
+* [x] Show linked task.
 
-* [ ] Link to full report details.
+* [x] Link to full report details.
 
-* [ ] Show truck ID.
+* [x] Show truck ID.
 
-* [ ] Show truck status.
+* [x] Show truck status.
 
-* [ ] Show assigned route.
+* [x] Show assigned route.
 
-* [ ] Show current stop.
+* [x] Show current stop.
 
-* [ ] Show remaining stops.
+* [x] Show remaining stops.
 
-* [ ] Show maintenance risk.
+* [x] Show maintenance risk.
 
-* [ ] Link to full truck details.
+* [x] Link to full truck details.
 
 ## Route panel
 
-* [ ] Show assigned truck.
-* [ ] Show number of stops.
-* [ ] Show estimated distance.
-* [ ] Show estimated duration.
-* [ ] Show current stop.
-* [ ] Show remaining stops.
-* [ ] Show completed stops.
-* [ ] Provide Re-optimise Route action.
-* [ ] Provide Mark Stop Completed action.
-* [ ] Require confirmation before route re-optimisation.
+* [x] Show assigned truck.
+* [x] Show number of stops.
+* [x] Show estimated distance.
+* [x] Show estimated duration.
+* [x] Show current stop.
+* [x] Show remaining stops.
+* [x] Show completed stops.
+* [ ] Provide Re-optimise Route action. **Phase 9 ownership; not implemented in Phase 3.**
+* [ ] Provide Mark Stop Completed action. **Phase 10 ownership; not implemented in Phase 3.**
+* [ ] Require confirmation before route re-optimisation. **Phase 9 ownership; not implemented in Phase 3.**
 
 ## Filters and search
 
-* [ ] Add All filter.
-* [ ] Add Smart Bins filter.
-* [ ] Add Citizen Reports filter.
-* [ ] Add Trucks filter.
-* [ ] Add Critical Only filter.
-* [ ] Add Active Route Only filter.
-* [ ] Search by bin ID.
-* [ ] Search by truck ID.
-* [ ] Search by report reference.
-* [ ] Search by landmark.
-* [ ] Search by address.
-* [ ] Focus or select the matching map item.
+* [x] Add All filter.
+* [x] Add Smart Bins filter.
+* [x] Add Citizen Reports filter.
+* [x] Add Trucks filter.
+* [x] Add Critical Only filter.
+* [x] Add Active Route Only filter.
+* [x] Search by bin ID.
+* [x] Search by truck ID.
+* [x] Search by report reference.
+* [x] Search by landmark.
+* [x] Search by address.
+* [x] Focus or select the matching map item.
 
 ## Map acceptance criteria
 
-* [ ] All configured bins appear at stored coordinates.
-* [ ] Bin marker status updates in real time.
-* [ ] New geolocated reports appear without refresh.
-* [ ] Marker selection opens the correct detail panel.
-* [ ] Active route stops are numbered.
-* [ ] Completed stops remain visible.
-* [ ] OpenStreetMap attribution is visible.
-* [ ] Map loading and empty states are present.
-* [ ] The configured demo dataset performs smoothly.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 3 handoff summary is recorded.
+* [x] All configured bins appear at stored coordinates.
+* [x] Bin marker status updates in real time.
+* [x] New geolocated reports appear without refresh.
+* [x] Marker selection opens the correct detail panel.
+* [x] Active route stops are numbered.
+* [x] Completed stops remain visible.
+* [x] OpenStreetMap attribution is visible.
+* [x] Map loading and empty states are present.
+* [x] The configured demo dataset performs smoothly.
+* [x] Checks for touched files pass.
+* [x] The Phase 3 handoff summary is recorded.
 
 ---
 
