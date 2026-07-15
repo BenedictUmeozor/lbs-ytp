@@ -23,7 +23,7 @@ function MapController({ points, focusCoordinates, viewKey }: { points: [number,
   return null;
 }
 
-export function LiveOperationsMapClient({ data, visible, selected: selection, focusCoordinates, onSelect }: { data: OperationsMapData; visible: { bins: OperationsMapData["bins"]; reports: OperationsMapData["reports"]; trucks: OperationsMapData["trucks"]; routeStops: NonNullable<OperationsMapData["activeRoute"]>["stops"]; depot: boolean; route: boolean }; selected: SelectedEntity | null; focusCoordinates: [number, number] | null; viewKey: string; onSelect: (selection: SelectedEntity) => void }) {
+export function LiveOperationsMapClient({ data, visible, selected: selection, focusCoordinates, viewKey, onSelect }: { data: OperationsMapData; visible: { bins: OperationsMapData["bins"]; reports: OperationsMapData["reports"]; trucks: OperationsMapData["trucks"]; routeStops: NonNullable<OperationsMapData["activeRoute"]>["stops"]; depot: boolean; route: boolean }; selected: SelectedEntity | null; focusCoordinates: [number, number] | null; viewKey: string; onSelect: (selection: SelectedEntity) => void }) {
   const route = data.activeRoute;
   const points: [number, number][] = [
     ...(visible.depot ? [[data.depot.latitude, data.depot.longitude] as [number, number]] : []),
