@@ -1,5 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import "leaflet/dist/leaflet.css";
+
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
 export default async function DashboardLayout({
   children,
@@ -10,5 +13,5 @@ export default async function DashboardLayout({
     redirect("/sign-in");
   }
 
-  return children;
+  return <DashboardShell>{children}</DashboardShell>;
 }

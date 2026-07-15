@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 2
-* **Current milestone:** Authentication implementation, dashboard shell and Overview
+* **Current phase:** Phase 3
+* **Current milestone:** Live Operations Map
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -144,7 +144,7 @@ Update this table after completing each phase.
 | Phase 1A | Complete | 2026-07-15 | Phase 1A established the project foundation. Convex is installed and connected through a dedicated client provider, generated Convex types are available, shadcn/ui is initialized for Tailwind CSS v4 without UI components, and environment-variable handling is documented safely. No schema, domain logic, seed data, authentication or product UI has been implemented. Phase 1B should begin by defining the Convex schema, indexes, domain status constants and allowed status transitions from the approved PRD. The current shadcn CLI’s Radix Nova style was used with explicit product-owner approval because the originally planned New York style was unavailable. |
 | Phase 1B | Complete | 2026-07-15 | Phase 1B defined the complete Convex schema for the approved MVP, including 14 typed tables, required relationships, reusable domain validators, targeted indexes, approved task-status transitions and safe public report-status mapping. Convex types were regenerated successfully. No records, seed logic, queries, mutations, actions, authentication or product UI were added. Phase 1C should create the idempotent Bariga demo dataset and the typed queries and minimal mutations required by the Overview and later operational phases. |
 | Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains one fleet-manager user, 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
-| Phase 2  | In progress | 2026-07-15 | Phase 2A implemented the Clerk and Convex authentication foundation: restricted manual demo-account flow, normalized Convex fleet-manager authorization, protected `/dashboard` routes, sign-in/sign-out, and a safe current-user query. Phase 2B should build the dashboard shell and Overview using authenticated Convex queries protected by `requireFleetManager()`. |
+| Phase 2  | Complete | 2026-07-15 | Phase 2A implemented the Clerk and Convex authentication foundation: restricted manual demo-account flow, normalized Convex fleet-manager authorization, protected `/dashboard` routes, sign-in/sign-out, and a safe current-user query. Phase 2B built the persistent dashboard shell, reusable dashboard UI primitives, one authenticated real-time `dashboard.getOverviewData` query protected by `requireFleetManager()`, the complete Overview page with a non-interactive OpenStreetMap/Leaflet preview, and protected placeholder pages for every later dashboard section. Phase 3 should extend the reusable Leaflet map foundation into the full interactive operations map. |
 | Phase 3  | Pending | —               | —               |
 | Phase 4  | Pending | —               | —               |
 | Phase 5  | Pending | —               | —               |
@@ -562,67 +562,67 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Dashboard shell
 
-* [ ] Create a persistent dashboard layout.
-* [ ] Add the Overview navigation item.
-* [ ] Add the Map navigation item.
-* [ ] Add the Smart Bins navigation item.
-* [ ] Add the Citizen Reports navigation item.
-* [ ] Add the Collection Tasks navigation item.
-* [ ] Add the Routes navigation item.
-* [ ] Add the Fleet & Maintenance navigation item.
-* [ ] Add the Settings navigation item.
-* [ ] Highlight the active navigation item.
-* [ ] Add a fleet-manager account area.
-* [ ] Add a visible “Bariga pilot” label.
-* [ ] Add a visible “Proof of concept” label where appropriate.
-* [ ] Support desktop and tablet dashboard layouts.
-* [ ] Keep public-app navigation separate from dashboard navigation.
+* [x] Create a persistent dashboard layout.
+* [x] Add the Overview navigation item.
+* [x] Add the Map navigation item.
+* [x] Add the Smart Bins navigation item.
+* [x] Add the Citizen Reports navigation item.
+* [x] Add the Collection Tasks navigation item.
+* [x] Add the Routes navigation item.
+* [x] Add the Fleet & Maintenance navigation item.
+* [x] Add the Settings navigation item.
+* [x] Highlight the active navigation item.
+* [x] Add a fleet-manager account area.
+* [x] Add a visible “Bariga pilot” label.
+* [x] Add a visible “Proof of concept” label where appropriate.
+* [x] Support desktop and tablet dashboard layouts.
+* [x] Keep public-app navigation separate from dashboard navigation.
 
 ## Shared UI
 
-* [ ] Configure shadcn/ui using the approved project structure.
-* [ ] Add only components needed by the current phase.
-* [ ] Create reusable status badges.
-* [ ] Create reusable priority badges.
-* [ ] Create reusable real-versus-simulated labels.
-* [ ] Create reusable page headers.
-* [ ] Create reusable summary cards.
-* [ ] Create reusable loading skeletons.
-* [ ] Create reusable empty-state components.
-* [ ] Ensure status is not communicated through colour alone.
+* [x] Configure shadcn/ui using the approved project structure.
+* [x] Add only components needed by the current phase.
+* [x] Create reusable status badges.
+* [x] Create reusable priority badges.
+* [x] Create reusable real-versus-simulated labels.
+* [x] Create reusable page headers.
+* [x] Create reusable summary cards.
+* [x] Create reusable loading skeletons.
+* [x] Create reusable empty-state components.
+* [x] Ensure status is not communicated through colour alone.
 
 ## Overview page
 
-* [ ] Display total monitored bins.
-* [ ] Display bins requiring collection.
-* [ ] Display critical bins.
-* [ ] Display open citizen reports.
-* [ ] Display pending collection tasks.
-* [ ] Display active trucks.
-* [ ] Display collections completed today.
-* [ ] Display trucks with maintenance alerts.
-* [ ] Display a small operations map.
-* [ ] Display critical alerts ordered by severity and time.
-* [ ] Display recent activity.
-* [ ] Display collection progress.
-* [ ] Display active-route summary.
-* [ ] Display prototype vehicle-health summary.
-* [ ] Link cards to the relevant filtered dashboard pages.
-* [ ] Link the map summary to the full map.
-* [ ] Link active-route summary to the route view.
-* [ ] Link maintenance summary to Fleet & Maintenance.
+* [x] Display total monitored bins.
+* [x] Display bins requiring collection.
+* [x] Display critical bins.
+* [x] Display open citizen reports.
+* [x] Display pending collection tasks.
+* [x] Display active trucks.
+* [x] Display collections completed today.
+* [x] Display trucks with maintenance alerts.
+* [x] Display a small operations map.
+* [x] Display critical alerts ordered by severity and time.
+* [x] Display recent activity.
+* [x] Display collection progress.
+* [x] Display active-route summary.
+* [x] Display prototype vehicle-health summary.
+* [x] Link cards to the relevant filtered dashboard pages.
+* [x] Link the map summary to the full map.
+* [x] Link active-route summary to the route view.
+* [x] Link maintenance summary to Fleet & Maintenance.
 
 ## Overview acceptance criteria
 
-* [ ] Summary cards use current Convex data.
-* [ ] Critical alerts are ordered correctly.
-* [ ] Recent activity updates through Convex subscriptions.
-* [ ] Overview data updates without a manual refresh.
-* [ ] Summary-card links open the correct destination.
-* [ ] Prototype maintenance data is labelled as simulated.
-* [ ] Loading and empty states are present.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 2 handoff summary is recorded.
+* [x] Summary cards use current Convex data.
+* [x] Critical alerts are ordered correctly.
+* [x] Recent activity updates through Convex subscriptions.
+* [x] Overview data updates without a manual refresh.
+* [x] Summary-card links open the correct destination.
+* [x] Prototype maintenance data is labelled as simulated.
+* [x] Loading and empty states are present.
+* [x] Checks for touched files pass.
+* [x] The Phase 2 handoff summary is recorded.
 
 ---
 

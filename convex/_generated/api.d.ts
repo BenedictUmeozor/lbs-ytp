@@ -11,6 +11,7 @@
 import type * as activity from "../activity.js";
 import type * as bins from "../bins.js";
 import type * as dashboard from "../dashboard.js";
+import type * as domain_auth from "../domain/auth.js";
 import type * as domain_demo_data from "../domain/demo_data.js";
 import type * as domain_read_helpers from "../domain/read_helpers.js";
 import type * as domain_status_rules from "../domain/status_rules.js";
@@ -24,6 +25,7 @@ import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
 import type * as tasks from "../tasks.js";
 import type * as trucks from "../trucks.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -35,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   activity: typeof activity;
   bins: typeof bins;
   dashboard: typeof dashboard;
+  "domain/auth": typeof domain_auth;
   "domain/demo_data": typeof domain_demo_data;
   "domain/read_helpers": typeof domain_read_helpers;
   "domain/status_rules": typeof domain_status_rules;
@@ -48,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   settings: typeof settings;
   tasks: typeof tasks;
   trucks: typeof trucks;
+  users: typeof users;
 }>;
 
 /**
