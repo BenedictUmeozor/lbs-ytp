@@ -183,6 +183,9 @@ export const activityEventTypeValidator = v.union(
   v.literal("maintenance_alert_created"),
   v.literal("settings_updated"),
   v.literal("manual_emptying_confirmed"),
+  v.literal("device_inactive"),
+  v.literal("bin_details_updated"),
+  v.literal("emptying_confirmed"),
 );
 export type ActivityEventType = Infer<typeof activityEventTypeValidator>;
 

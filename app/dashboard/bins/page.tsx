@@ -1,10 +1,5 @@
-import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
+import { SmartBinsPage } from "@/components/bins/smart-bins-page";
 
 export default function BinsPage() {
-  return (
-    <DashboardPlaceholder
-      title="Smart Bins"
-      description="Smart-bin monitoring and hardware controls will be implemented in Phase 4."
-    />
-  );
+  return <SmartBinsPage />;
 }

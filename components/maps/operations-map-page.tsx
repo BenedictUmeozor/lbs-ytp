@@ -2,7 +2,8 @@
 
 import { useConvexAuth, useQuery } from "convex/react";
 import { AlertTriangle, Map, Recycle, Trash2, Truck, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
@@ -67,6 +68,10 @@ function selectionMatchesFilter(
 }
 export function OperationsMapPage() {
   const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
+  const searchParams = useSearchParams();
+  const requestedType = searchParams.get("type");
+  const requestedId = searchParams.get("selected");
+  const handledRequestedSelection = useRef<string | null>(null);
   const data = useQuery(
     api.operationsMap.getData,
     authLoading || !isAuthenticated ? "skip" : {},
@@ -109,24 +114,44 @@ export function OperationsMapPage() {
       : allRecords.filter((record) =>
           record.text.toLocaleLowerCase().includes(query),
         );
-  const select = (next: SelectedEntity, revealInAll = false) => {
-    if (revealInAll) setFilter("all");
-    setSelected(next);
-    setSearchOpen(false);
-    const record =
-      next.type === "bin"
-        ? data?.bins.find((item) => item.id === next.id)
-        : next.type === "report"
-          ? data?.reports.find((item) => item.id === next.id)
-          : next.type === "truck"
-            ? data?.trucks.find((item) => item.id === next.id)
-            : data?.activeRoute?.stops.find((item) => item.id === next.id);
-    if (record)
-      setFocusRequest({
-        coordinates: [record.latitude, record.longitude],
-        key: crypto.randomUUID(),
-      });
-  };
+  const select = useCallback(
+    (next: SelectedEntity, revealInAll = false) => {
+      if (revealInAll) setFilter("all");
+      setSelected(next);
+      setSearchOpen(false);
+      const record =
+        next.type === "bin"
+          ? data?.bins.find((item) => item.id === next.id)
+          : next.type === "report"
+            ? data?.reports.find((item) => item.id === next.id)
+            : next.type === "truck"
+              ? data?.trucks.find((item) => item.id === next.id)
+              : data?.activeRoute?.stops.find((item) => item.id === next.id);
+      if (record)
+        setFocusRequest({
+          coordinates: [record.latitude, record.longitude],
+          key: crypto.randomUUID(),
+        });
+    },
+    [data],
+  );
+  useEffect(() => {
+    if (
+      data === undefined ||
+      requestedType !== "bin" ||
+      requestedId === null ||
+      handledRequestedSelection.current === `${requestedType}:${requestedId}`
+    )
+      return;
+    const bin = data.bins.find((item) => item.id === requestedId);
+    if (bin === undefined) return;
+    handledRequestedSelection.current = `${requestedType}:${requestedId}`;
+    const timeout = window.setTimeout(
+      () => select({ type: "bin", id: bin.id }, true),
+      0,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [data, requestedId, requestedType, select]);
   const selectedStillExists =
     selected !== null &&
     data !== undefined &&

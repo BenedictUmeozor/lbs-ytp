@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 4
-* **Current milestone:** Smart-Bin Monitoring and Hardware Flow
+* **Current phase:** Phase 5
+* **Current milestone:** Public Web Reporting and Report Tracking
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -110,10 +110,10 @@ The coding agent must not resolve these decisions independently.
 
 ### D-03 — Device-offline evaluation
 
-* [ ] Choose whether offline status will be evaluated during queries, through scheduled Convex functions, or through another approved Convex-native mechanism.
-* [ ] Confirm how frequently offline status should be refreshed during the demo.
+* [x] Use a Convex cron to evaluate offline status.
+* [x] Run once per minute with the five-minute default timeout from global settings; evaluate real devices only and persist offline status.
 * **Required before:** Phase 4
-* **Status:** Pending owner decision
+* **Status:** Approved — [D-03](decisions/D-03_DEVICE_OFFLINE_EVALUATION.md).
 
 ### D-04 — Gemini configuration
 
@@ -146,7 +146,7 @@ Update this table after completing each phase.
 | Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains one fleet-manager user, 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
 | Phase 2  | Complete | 2026-07-15 | Phase 2A implemented the Clerk and Convex authentication foundation: restricted manual demo-account flow, normalized Convex fleet-manager authorization, protected `/dashboard` routes, sign-in/sign-out, and a safe current-user query. Phase 2B built the persistent dashboard shell, reusable dashboard UI primitives, one authenticated real-time `dashboard.getOverviewData` query protected by `requireFleetManager()`, the complete Overview page with a non-interactive OpenStreetMap/Leaflet preview, and protected placeholder pages for every later dashboard section. The correction pass improved authentication failure handling, generic runtime errors, empty states and shared map data loading. Phase 3 should extend the reusable Leaflet map foundation into the full interactive operations map. |
 | Phase 3  | Complete | 2026-07-15 | Dedicated protected map query with live Convex subscriptions, an interactive Leaflet map, bins/reports/trucks/depot/route layers, filters and search, live selected-item details, a keyboard-accessible operational list, and read-only active-route rendering. Route re-optimisation remains Phase 9; stop completion remains Phase 10. |
-| Phase 4  | Pending | —               | —               |
+| Phase 4  | Complete | 2026-07-15 | Smart Bins now provides a protected live list and detail view with reading history, charting, collection/report context and auditable fleet-manager actions. The public `POST /hardware/readings` endpoint is intentionally unauthenticated for this controlled MVP, while validating payloads and device assignments. It applies status and automatic-task rules, persists real-device offline state through a one-minute cron, and supports sensor/manual emptying confirmation. This endpoint is not production secure; production device authentication and abuse protection remain outside scope. Phase 5 still depends on unresolved D-02 photo storage. |
 | Phase 5  | Pending | —               | —               |
 | Phase 6  | Pending | —               | —               |
 | Phase 7  | Pending | —               | —               |
@@ -760,128 +760,130 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Decision dependency
 
-* [ ] Decision D-03 has been resolved.
+* [x] Decision D-03 has been resolved.
 
 ## Smart Bins page
 
-* [ ] Display bin ID.
-* [ ] Display bin name.
-* [ ] Display address.
-* [ ] Display fill percentage.
-* [ ] Display bin status.
-* [ ] Display device status.
-* [ ] Display last reading.
-* [ ] Display active task.
-* [ ] Display last collection.
-* [ ] Display real or simulated source.
+* [x] Display bin ID.
+* [x] Display bin name.
+* [x] Display address.
+* [x] Display fill percentage.
+* [x] Display bin status.
+* [x] Display device status.
+* [x] Display last reading.
+* [x] Display active task.
+* [x] Display last collection.
+* [x] Display real or simulated source.
 
 ## Bin filters
 
-* [ ] Filter all bins.
-* [ ] Filter normal bins.
-* [ ] Filter approaching-full bins.
-* [ ] Filter collection-required bins.
-* [ ] Filter critical bins.
-* [ ] Filter offline devices.
-* [ ] Filter real hardware.
-* [ ] Filter simulated bins.
+* [x] Filter all bins.
+* [x] Filter normal bins.
+* [x] Filter approaching-full bins.
+* [x] Filter collection-required bins.
+* [x] Filter critical bins.
+* [x] Filter offline devices.
+* [x] Filter real hardware.
+* [x] Filter simulated bins.
 
 ## Bin detail
 
-* [ ] Show bin ID.
-* [ ] Show device ID.
-* [ ] Show name and location.
-* [ ] Show coordinates.
-* [ ] Show current fill percentage.
-* [ ] Show current status.
-* [ ] Show device connectivity.
-* [ ] Show last reading.
-* [ ] Show fill-level history.
-* [ ] Show recent readings.
-* [ ] Show collection history.
-* [ ] Show active collection task.
-* [ ] Show related citizen reports.
-* [ ] Show real or simulated source.
+* [x] Show bin ID.
+* [x] Show device ID.
+* [x] Show name and location.
+* [x] Show coordinates.
+* [x] Show current fill percentage.
+* [x] Show current status.
+* [x] Show device connectivity.
+* [x] Show last reading.
+* [x] Show fill-level history.
+* [x] Show recent readings.
+* [x] Show collection history.
+* [x] Show active collection task.
+* [x] Show related citizen reports.
+* [x] Show real or simulated source.
 
 ## Bin actions
 
-* [ ] Create collection task manually.
-* [ ] View bin on the map.
-* [ ] Mark device inactive.
-* [ ] Manually confirm emptying.
-* [ ] Edit bin name and location.
-* [ ] View flagged unusual readings.
+* [x] Create collection task manually.
+* [x] View bin on the map.
+* [x] Mark device inactive.
+* [x] Manually confirm emptying.
+* [x] Edit bin name and location.
+* [x] View flagged unusual readings.
 
 ## Hardware HTTP action
 
-* [ ] Add a Convex HTTP `POST` endpoint.
-* [ ] Require `deviceId`.
-* [ ] Require `binId`.
-* [ ] Require `fillPercentage`.
-* [ ] Require `recordedAt`.
-* [ ] Validate fill percentage is between 0 and 100.
-* [ ] Confirm the device exists.
-* [ ] Confirm the device is assigned to the submitted bin.
-* [ ] Store the sensor reading.
-* [ ] Record received time.
-* [ ] Update the bin’s current fill percentage.
-* [ ] Update the bin’s last-reading time.
-* [ ] Update the device’s last-seen time.
-* [ ] Mark the device online.
-* [ ] Recalculate bin status.
-* [ ] Evaluate automatic task rules.
-* [ ] Return a successful response after storage.
-* [ ] Return a validation response for invalid payloads.
-* [ ] Validate the hardware endpoint’s expected secret or source.
+* [x] Add a Convex HTTP `POST` endpoint.
+* [x] Require `deviceId`.
+* [x] Require `binId`.
+* [x] Require `fillPercentage`.
+* [x] Require `recordedAt`.
+* [x] Validate fill percentage is between 0 and 100.
+* [x] Confirm the device exists.
+* [x] Confirm the device is assigned to the submitted bin.
+* [x] Store the sensor reading.
+* [x] Record received time.
+* [x] Update the bin’s current fill percentage.
+* [x] Update the bin’s last-reading time.
+* [x] Update the device’s last-seen time.
+* [x] Mark the device online.
+* [x] Recalculate bin status.
+* [x] Evaluate automatic task rules.
+* [x] Return a successful response after storage.
+* [x] Return a validation response for invalid payloads.
+* [x] Keep the hardware endpoint intentionally unauthenticated for the controlled MVP and document this limitation.
+* [x] Validate payload and device-to-bin assignment.
+* [x] Reject simulated and inactive devices.
 
 ## Bin status rules
 
-* [ ] Calculate 0–59% as Normal.
-* [ ] Calculate 60–79% as Approaching full.
-* [ ] Calculate 80–94% as Collection required.
-* [ ] Calculate 95–100% as Critical.
-* [ ] Use current settings instead of hardcoded thresholds where required.
-* [ ] Flag unusual sudden jumps.
-* [ ] Create a notification when a bin reaches collection threshold.
-* [ ] Create a notification when a bin becomes critical.
-* [ ] Create immutable activity events for readings and status changes.
+* [x] Calculate 0–59% as Normal.
+* [x] Calculate 60–79% as Approaching full.
+* [x] Calculate 80–94% as Collection required.
+* [x] Calculate 95–100% as Critical.
+* [x] Use current settings instead of hardcoded thresholds where required.
+* [x] Flag unusual sudden jumps.
+* [x] Create a notification when a bin reaches collection threshold.
+* [x] Create a notification when a bin becomes critical.
+* [x] Create immutable activity events for readings and status changes.
 
 ## Device-offline rules
 
-* [ ] Mark a device offline after the approved five-minute rule.
-* [ ] Create an offline notification.
-* [ ] Create an immutable offline activity event.
-* [ ] Restore online status after a valid new reading.
-* [ ] Keep real and simulated device states distinguishable.
+* [x] Mark a device offline after the approved five-minute rule.
+* [x] Create an offline notification.
+* [x] Create an immutable offline activity event.
+* [x] Restore online status after a valid new reading.
+* [x] Keep real and simulated device states distinguishable.
 
 ## Duplicate-task protection
 
-* [ ] Prevent repeated high readings from creating duplicate tasks.
-* [ ] Allow only one active collection task per bin.
-* [ ] Preserve new sensor readings even when an active task already exists.
+* [x] Prevent repeated high readings from creating duplicate tasks.
+* [x] Allow only one active collection task per bin.
+* [x] Preserve new sensor readings even when an active task already exists.
 
 ## Emptying confirmation
 
-* [ ] Mark a collected bin task as awaiting sensor confirmation.
-* [ ] Confirm emptying after a reading below 30%.
-* [ ] Return the bin to Normal after confirmation.
-* [ ] Record the confirmed collection time.
-* [ ] Support manual emptying confirmation.
-* [ ] Record manual confirmation in history.
+* [x] Mark a collected bin task as awaiting sensor confirmation.
+* [x] Confirm emptying after a reading below 30%.
+* [x] Return the bin to Normal after confirmation.
+* [x] Record the confirmed collection time.
+* [x] Support manual emptying confirmation.
+* [x] Record manual confirmation in history.
 
 ## Smart-bin acceptance criteria
 
-* [ ] One real device can send valid readings.
-* [ ] A reading updates the correct bin.
-* [ ] Status changes according to thresholds.
-* [ ] Real-time dashboard and map updates occur.
-* [ ] A qualifying bin creates only one active task.
-* [ ] Invalid readings are rejected.
-* [ ] Offline state follows the approved rule.
-* [ ] Reading history is chronological.
-* [ ] Manual confirmation is auditable.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 4 handoff summary is recorded.
+* [x] One real device can send valid readings.
+* [x] A reading updates the correct bin.
+* [x] Status changes according to thresholds.
+* [x] Real-time dashboard and map updates occur.
+* [x] A qualifying bin creates only one active task.
+* [x] Invalid readings are rejected.
+* [x] Offline state follows the approved rule.
+* [x] Reading history is chronological.
+* [x] Manual confirmation is auditable.
+* [x] Checks for touched files pass.
+* [x] The Phase 4 handoff summary is recorded.
 
 ---
 
@@ -1687,7 +1689,7 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 * [ ] Phone numbers are never sent to Gemini.
 * [ ] Only required report text is sent to Gemini.
 * [ ] Public tracking exposes only safe status data.
-* [ ] Hardware webhook validates its expected source or secret.
+* [ ] The hardware endpoint is intentionally unauthenticated for the controlled MVP; its limitation and payload/device-assignment validation are documented.
 * [ ] WhatsApp webhook validates its expected source.
 * [ ] Uploaded photos are not publicly browsable.
 * [ ] Environment secrets are not exposed to the browser.

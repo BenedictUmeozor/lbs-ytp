@@ -10,14 +10,19 @@
 
 import type * as activity from "../activity.js";
 import type * as bins from "../bins.js";
+import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as domain_auth from "../domain/auth.js";
+import type * as domain_bin_rules from "../domain/bin_rules.js";
 import type * as domain_demo_data from "../domain/demo_data.js";
 import type * as domain_operations from "../domain/operations.js";
 import type * as domain_read_helpers from "../domain/read_helpers.js";
 import type * as domain_status_rules from "../domain/status_rules.js";
+import type * as domain_task_helpers from "../domain/task_helpers.js";
 import type * as domain_validators from "../domain/validators.js";
 import type * as domain_write_helpers from "../domain/write_helpers.js";
+import type * as hardware from "../hardware.js";
+import type * as http from "../http.js";
 import type * as maintenance from "../maintenance.js";
 import type * as notifications from "../notifications.js";
 import type * as operationsMap from "../operationsMap.js";
@@ -38,14 +43,19 @@ import type {
 declare const fullApi: ApiFromModules<{
   activity: typeof activity;
   bins: typeof bins;
+  crons: typeof crons;
   dashboard: typeof dashboard;
   "domain/auth": typeof domain_auth;
+  "domain/bin_rules": typeof domain_bin_rules;
   "domain/demo_data": typeof domain_demo_data;
   "domain/operations": typeof domain_operations;
   "domain/read_helpers": typeof domain_read_helpers;
   "domain/status_rules": typeof domain_status_rules;
+  "domain/task_helpers": typeof domain_task_helpers;
   "domain/validators": typeof domain_validators;
   "domain/write_helpers": typeof domain_write_helpers;
+  hardware: typeof hardware;
+  http: typeof http;
   maintenance: typeof maintenance;
   notifications: typeof notifications;
   operationsMap: typeof operationsMap;

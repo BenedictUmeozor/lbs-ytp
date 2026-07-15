@@ -110,6 +110,8 @@ The MVP will not include:
 - One physical smart-bin prototype.
 - Hardware-to-Convex webhook.
 - Live bin fill-level updates.
+
+The physical smart-bin webhook is intentionally unauthenticated for the controlled proof-of-concept demonstration. Production device authentication is outside the MVP scope.
 - Convex database and real-time subscriptions.
 - WhatsApp citizen reporting using Meta's test number.
 - Public web reporting form.
@@ -958,7 +960,7 @@ The smart-bin device sends:
 
 ## 13.2 Hardware Endpoint
 
-The device sends an HTTPS `POST` request directly to a Convex HTTP action.
+The prototype sends an HTTPS `POST` request directly to a Convex HTTP action. The endpoint is intentionally unauthenticated for the controlled MVP: no API key, secret or authentication header is required. It still validates the submitted payload, device, bin and device-to-bin relationship. This is not production secure; a production deployment would require device authentication and abuse protection.
 
 ## 13.3 Processing Rules
 
@@ -1696,7 +1698,9 @@ Smart-bin device.
 
 - Return success after validation and storage.
 - Return a validation failure for invalid payload.
+- Validate the submitted device, bin and device-to-bin relationship.
 - Do not create duplicate tasks from repeated readings.
+- The controlled MVP endpoint is intentionally unauthenticated; production device authentication and abuse protection are outside MVP scope.
 
 ---
 
@@ -1809,7 +1813,7 @@ The report should remain stored when AI processing fails.
 - Phone numbers are not sent to Gemini.
 - Only required report text is sent to Gemini.
 - Public report tracking exposes only safe status data.
-- Webhook endpoints validate their expected source or secret.
+- The WhatsApp webhook validates its expected source. The physical smart-bin endpoint is intentionally unauthenticated for the controlled MVP and must not be presented as production secure.
 - Uploaded photos are not publicly browsable by default.
 - Environment secrets are not exposed to the browser.
 - Simulated data is clearly labelled.

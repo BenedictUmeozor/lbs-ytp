@@ -41,7 +41,8 @@ export default defineSchema({
   })
     .index("by_deviceIdentifier", ["deviceIdentifier"])
     .index("by_assignedBinId", ["assignedBinId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_source", ["source"]),
 
   bins: defineTable({
     displayId: v.string(),
@@ -98,7 +99,8 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_priority", ["priority"])
     .index("by_source", ["source"])
-    .index("by_linkedTaskId", ["linkedTaskId"]),
+    .index("by_linkedTaskId", ["linkedTaskId"])
+    .index("by_linkedBinId", ["linkedBinId"]),
 
   whatsappConversations: defineTable({
     whatsappUserId: v.string(),
