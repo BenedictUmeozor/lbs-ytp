@@ -977,6 +977,8 @@ On receipt:
 9. Evaluate collection-task rules.
 10. Publish the updated state to the dashboard.
 
+A valid delayed reading is retained in history and updates device connectivity using the server receipt time. It does not replace the bin's current measurement or operational status.
+
 ## 13.4 Bin Status Rules
 
 | Fill percentage | Status |
@@ -994,6 +996,7 @@ On receipt:
 - A sudden unusual jump is stored and flagged.
 - Repeated high readings do not create duplicate tasks.
 - One bin may have only one active collection task.
+- An exact repeat using the same device and recorded time is idempotent. A conflicting payload using that same key is rejected.
 
 ## 13.6 Collection Completion
 
@@ -1004,7 +1007,7 @@ Manager marks task as collected
 → bin returns to Normal
 ```
 
-The fleet manager may manually confirm emptying if the sensor is delayed.
+The fleet manager may manually confirm emptying if the sensor is delayed. A bin remains in Awaiting confirmation until a reading below the empty-confirmation threshold is received or a fleet manager confirms emptying manually. Higher readings during this state do not replace the Awaiting confirmation status or create another task.
 
 ---
 

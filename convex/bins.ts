@@ -107,7 +107,7 @@ export const list = query({
 });
 
 export const getDetail = query({
-  args: { binId: v.id("bins") },
+  args: { binId: v.string() },
   returns: v.union(
     v.object({
       row: rowValidator,
@@ -137,7 +137,9 @@ export const getDetail = query({
   ),
   handler: async (ctx, args) => {
     await requireFleetManager(ctx);
-    const bin = await ctx.db.get(args.binId);
+    const binId = ctx.db.normalizeId("bins", args.binId);
+    if (binId === null) return null;
+    const bin = await ctx.db.get(binId);
     if (bin === null) return null;
     const [readings, tasks, reports] = await Promise.all([
       ctx.db
@@ -156,15 +158,13 @@ export const getDetail = query({
     ]);
     return {
       row: await binRow(ctx, bin),
-      readings: readings
-        .reverse()
-        .map((reading) => ({
-          id: reading._id,
-          recordedAt: reading.recordedAt,
-          receivedAt: reading.receivedAt,
-          fillPercentage: reading.fillPercentage,
-          unusualReading: reading.unusualReading,
-        })),
+      readings: readings.reverse().map((reading) => ({
+        id: reading._id,
+        recordedAt: reading.recordedAt,
+        receivedAt: reading.receivedAt,
+        fillPercentage: reading.fillPercentage,
+        unusualReading: reading.unusualReading,
+      })),
       unusualReadingCount: readings.filter((reading) => reading.unusualReading)
         .length,
       collectionHistory: tasks

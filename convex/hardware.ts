@@ -75,6 +75,13 @@ export const ingestReading = internalMutation({
       )
       .unique();
     if (duplicate !== null) {
+      if (
+        duplicate.binId !== bin._id ||
+        duplicate.fillPercentage !== args.fillPercentage
+      )
+        throw new Error(
+          "CONFLICT: A different reading already exists for this device and recordedAt value.",
+        );
       return {
         duplicate: true,
         appliedToCurrentState: false,
@@ -110,25 +117,12 @@ export const ingestReading = internalMutation({
       readingId,
     );
 
-    if (!isCurrentReading(bin.lastReadingAt, args.recordedAt)) {
-      return {
-        duplicate: false,
-        appliedToCurrentState: false,
-        unusualReading,
-        deviceStatus: device.status,
-        binStatus: bin.status,
-        taskCreated: false,
-        emptyingConfirmed: false,
-      };
-    }
-
-    let deviceStatus = device.status;
+    const deviceStatus = device.status === "offline" ? "online" : device.status;
     await ctx.db.patch(device._id, {
       lastSeenAt: args.receivedAt,
       status: "online",
     });
     if (device.status === "offline") {
-      deviceStatus = "online";
       await insertActivityEvent(
         ctx,
         "device_online",
@@ -141,39 +135,81 @@ export const ingestReading = internalMutation({
       );
     }
 
+    if (!isCurrentReading(bin.lastReadingAt, args.recordedAt)) {
+      return {
+        duplicate: false,
+        appliedToCurrentState: false,
+        unusualReading,
+        deviceStatus,
+        binStatus: bin.status,
+        taskCreated: false,
+        emptyingConfirmed: false,
+      };
+    }
+
     const settings = await ctx.db
       .query("settings")
       .withIndex("by_key", (q) => q.eq("key", "global"))
       .unique();
     if (settings === null) throw new Error("Settings are unavailable.");
-    const emptyingConfirmed = shouldConfirmEmptying(
-      bin.awaitingEmptyConfirmation,
-      args.fillPercentage,
-      settings,
-    );
-    const nextStatus = emptyingConfirmed
-      ? "normal"
-      : calculateBinStatus(args.fillPercentage, settings);
+
+    if (bin.awaitingEmptyConfirmation) {
+      const emptyingConfirmed = shouldConfirmEmptying(
+        true,
+        args.fillPercentage,
+        settings,
+      );
+      const confirmationStatus = emptyingConfirmed
+        ? ("normal" as const)
+        : ("awaiting_confirmation" as const);
+      await ctx.db.patch(bin._id, {
+        currentFillPercentage: args.fillPercentage,
+        lastReadingAt: args.recordedAt,
+        status: confirmationStatus,
+        ...(emptyingConfirmed
+          ? {
+              awaitingEmptyConfirmation: false,
+              lastCollectionAt: args.recordedAt,
+            }
+          : { awaitingEmptyConfirmation: true }),
+      });
+      if (emptyingConfirmed) {
+        await insertActivityEvent(
+          ctx,
+          "emptying_confirmed",
+          `Sensor reading confirmed ${bin.displayId} was emptied.`,
+          "bin",
+          bin._id,
+        );
+        await insertActivityEvent(
+          ctx,
+          "bin_status_changed",
+          `${bin.displayId} changed from awaiting_confirmation to normal.`,
+          "bin",
+          bin._id,
+          undefined,
+          "awaiting_confirmation",
+          "normal",
+        );
+      }
+      return {
+        duplicate: false,
+        appliedToCurrentState: true,
+        unusualReading,
+        deviceStatus,
+        binStatus: confirmationStatus,
+        taskCreated: false,
+        emptyingConfirmed,
+      };
+    }
+
+    const nextStatus = calculateBinStatus(args.fillPercentage, settings);
     await ctx.db.patch(bin._id, {
       currentFillPercentage: args.fillPercentage,
       lastReadingAt: args.recordedAt,
-      ...(emptyingConfirmed
-        ? {
-            awaitingEmptyConfirmation: false,
-            lastCollectionAt: args.recordedAt,
-          }
-        : {}),
       status: nextStatus,
     });
-    if (emptyingConfirmed) {
-      await insertActivityEvent(
-        ctx,
-        "emptying_confirmed",
-        `Sensor reading confirmed ${bin.displayId} was emptied.`,
-        "bin",
-        bin._id,
-      );
-    } else if (bin.status !== nextStatus) {
+    if (bin.status !== nextStatus) {
       await insertActivityEvent(
         ctx,
         "bin_status_changed",
@@ -226,7 +262,7 @@ export const ingestReading = internalMutation({
       binStatus: nextStatus,
       taskCreated: taskResult?.created ?? false,
       taskId: taskResult?.created ? taskResult.task._id : undefined,
-      emptyingConfirmed,
+      emptyingConfirmed: false,
     };
   },
 });

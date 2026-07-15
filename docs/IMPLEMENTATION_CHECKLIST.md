@@ -146,7 +146,7 @@ Update this table after completing each phase.
 | Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains one fleet-manager user, 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
 | Phase 2  | Complete | 2026-07-15 | Phase 2A implemented the Clerk and Convex authentication foundation: restricted manual demo-account flow, normalized Convex fleet-manager authorization, protected `/dashboard` routes, sign-in/sign-out, and a safe current-user query. Phase 2B built the persistent dashboard shell, reusable dashboard UI primitives, one authenticated real-time `dashboard.getOverviewData` query protected by `requireFleetManager()`, the complete Overview page with a non-interactive OpenStreetMap/Leaflet preview, and protected placeholder pages for every later dashboard section. The correction pass improved authentication failure handling, generic runtime errors, empty states and shared map data loading. Phase 3 should extend the reusable Leaflet map foundation into the full interactive operations map. |
 | Phase 3  | Complete | 2026-07-15 | Dedicated protected map query with live Convex subscriptions, an interactive Leaflet map, bins/reports/trucks/depot/route layers, filters and search, live selected-item details, a keyboard-accessible operational list, and read-only active-route rendering. Route re-optimisation remains Phase 9; stop completion remains Phase 10. |
-| Phase 4  | Complete | 2026-07-15 | Smart Bins now provides a protected live list and detail view with reading history, charting, collection/report context and auditable fleet-manager actions. The public `POST /hardware/readings` endpoint is intentionally unauthenticated for this controlled MVP, while validating payloads and device assignments. It applies status and automatic-task rules, persists real-device offline state through a one-minute cron, and supports sensor/manual emptying confirmation. This endpoint is not production secure; production device authentication and abuse protection remain outside scope. Phase 5 still depends on unresolved D-02 photo storage. |
+| Phase 4  | Complete | 2026-07-15 | Smart Bins provides a protected live list/detail view, public controlled-MVP hardware ingestion with payload and assignment validation, automatic task rules, real-device offline evaluation, and auditable manual/sensor emptying confirmation. The correction pass preserves awaiting-confirmation state, restores connectivity for delayed readings, rejects conflicting duplicates, safely handles invalid selected-bin URLs, fixes authentication-state ordering, and records sensor-confirmed status history. The awaiting-confirmation helper is ready, but its invocation from the later Collection Tasks “mark task collected” mutation remains deferred. Phase 5 remains blocked by unresolved D-02 photo storage. |
 | Phase 5  | Pending | —               | —               |
 | Phase 6  | Pending | —               | —               |
 | Phase 7  | Pending | —               | —               |
@@ -864,12 +864,13 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Emptying confirmation
 
-* [x] Mark a collected bin task as awaiting sensor confirmation.
+* [x] A reusable helper moves a linked smart bin into awaiting confirmation.
+* [ ] Deferred integration: call that helper from the later Collection Tasks “mark task collected” mutation.
 * [x] Confirm emptying after a reading below 30%.
 * [x] Return the bin to Normal after confirmation.
 * [x] Record the confirmed collection time.
 * [x] Support manual emptying confirmation.
-* [x] Record manual confirmation in history.
+* [x] Record emptying and status transitions in history.
 
 ## Smart-bin acceptance criteria
 

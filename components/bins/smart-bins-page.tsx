@@ -46,7 +46,7 @@ export function SmartBinsPage() {
     api.bins.getDetail,
     authLoading || !isAuthenticated || selectedId === null
       ? "skip"
-      : { binId: selectedId as never },
+      : { binId: selectedId },
   );
   const update = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams(params.toString());
@@ -55,7 +55,7 @@ export function SmartBinsPage() {
     );
     window.history.pushState(null, "", `/dashboard/bins?${next.toString()}`);
   };
-  if (authLoading || bins === undefined) return <BinsSkeleton />;
+  if (authLoading) return <BinsSkeleton />;
   if (!isAuthenticated)
     return (
       <EmptyState
@@ -64,6 +64,7 @@ export function SmartBinsPage() {
         icon={AlertTriangle}
       />
     );
+  if (bins === undefined) return <BinsSkeleton />;
   const summary = {
     total: bins.length,
     collection: bins.filter((bin) => bin.status === "collection_required")
@@ -144,6 +145,7 @@ export function SmartBinsPage() {
           title="Smart bin not found"
           description="The selected bin is unavailable or the link is invalid."
           icon={AlertTriangle}
+          action={{ label: "Return to bin list", href: "/dashboard/bins" }}
         />
       )}
       {detail !== undefined && detail !== null && (

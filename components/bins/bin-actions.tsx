@@ -24,16 +24,27 @@ export function BinActions({
     "low" | "medium" | "high" | "critical"
   >("high");
   const [message, setMessage] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
   const createTask = useMutation(api.bins.createManualTask);
   const markInactive = useMutation(api.bins.markDeviceInactive);
   const confirmEmptying = useMutation(api.bins.confirmEmptyingManually);
   const updateDetails = useMutation(api.bins.updateBinDetails);
-  const run = async (action: () => Promise<unknown>, success: string) => {
+  const run = async (
+    action: () => Promise<unknown>,
+    success: string,
+    onSuccess?: () => void,
+  ) => {
+    if (isRunning) return;
+    setMessage(null);
+    setIsRunning(true);
     try {
       await action();
+      onSuccess?.();
       setMessage(success);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Action failed.");
+    } finally {
+      setIsRunning(false);
     }
   };
   const bin = detail.row;
@@ -52,7 +63,9 @@ export function BinActions({
         )}
         <Button
           variant="outline"
-          disabled={!bin.deviceId || bin.deviceStatus === "inactive"}
+          disabled={
+            isRunning || !bin.deviceId || bin.deviceStatus === "inactive"
+          }
           onClick={() => {
             if (
               window.confirm(
@@ -70,6 +83,7 @@ export function BinActions({
         {bin.awaitingEmptyConfirmation && (
           <Button
             variant="outline"
+            disabled={isRunning}
             onClick={() => {
               if (
                 window.confirm(
@@ -85,7 +99,11 @@ export function BinActions({
             Confirm emptying
           </Button>
         )}
-        <Button variant="outline" onClick={() => setEditOpen(!editOpen)}>
+        <Button
+          variant="outline"
+          disabled={isRunning}
+          onClick={() => setEditOpen(!editOpen)}
+        >
           Edit name and location
         </Button>
         <Button variant="outline" onClick={onShowUnusual}>
@@ -105,6 +123,10 @@ export function BinActions({
             void run(
               () => createTask({ binId: bin.id, priority, reason }),
               "Collection task created.",
+              () => {
+                setTaskOpen(false);
+                setReason("");
+              },
             );
           }}
         >
@@ -131,16 +153,20 @@ export function BinActions({
               required
             />
           </label>
-          <Button type="submit">Create task</Button>
+          <Button type="submit" disabled={isRunning}>
+            {isRunning ? "Creating task…" : "Create task"}
+          </Button>
         </form>
       )}
       {editOpen && (
         <BinEditForm
           detail={detail}
+          disabled={isRunning}
           onSave={(values) =>
             run(
               () => updateDetails({ binId: bin.id, ...values }),
               "Bin details updated.",
+              () => setEditOpen(false),
             )
           }
         />
@@ -151,8 +177,10 @@ export function BinActions({
 function BinEditForm({
   detail,
   onSave,
+  disabled,
 }: {
   detail: BinDetail;
+  disabled: boolean;
   onSave: (values: {
     name: string;
     address: string;
@@ -197,6 +225,7 @@ function BinEditForm({
         Latitude
         <Input
           type="number"
+          step="any"
           value={latitude}
           onChange={(event) => setLatitude(event.target.value)}
           required
@@ -206,12 +235,15 @@ function BinEditForm({
         Longitude
         <Input
           type="number"
+          step="any"
           value={longitude}
           onChange={(event) => setLongitude(event.target.value)}
           required
         />
       </label>
-      <Button type="submit">Save details</Button>
+      <Button type="submit" disabled={disabled}>
+        {disabled ? "Saving…" : "Save details"}
+      </Button>
     </form>
   );
 }
