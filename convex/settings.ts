@@ -69,7 +69,9 @@ export const update = internalMutation({
     const settings = await ctx.db.query("settings").withIndex("by_key", (q) => q.eq("key", "global")).unique();
     if (settings === null) throw new Error("Global settings record does not exist.");
 
-    const suppliedEntries = Object.entries(args).filter((entry): entry is [string, number] => entry[1] !== undefined);
+    const suppliedEntries = (Object.entries(args) as [keyof SettingsValues, number | undefined][]).filter(
+      (entry): entry is [keyof SettingsValues, number] => entry[1] !== undefined,
+    );
     if (suppliedEntries.length === 0) throw new Error("At least one settings field is required.");
 
     const merged: SettingsValues = {
@@ -88,7 +90,7 @@ export const update = internalMutation({
       roadConditionPenaltyMinutes: args.roadConditionPenaltyMinutes ?? settings.roadConditionPenaltyMinutes,
     };
     validateSettings(merged);
-    const changedFields = suppliedEntries.filter(([name, value]) => settings[name as keyof typeof settings] !== value).map(([name]) => name);
+    const changedFields = suppliedEntries.filter(([name, value]) => settings[name] !== value).map(([name]) => name);
     if (changedFields.length === 0) return { changed: false, settingsId: settings._id, changedFields };
 
     await ctx.db.patch(settings._id, Object.fromEntries(changedFields.map((name) => [name, merged[name]])));

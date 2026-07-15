@@ -1,12 +1,13 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
+import type { TaskStatus } from "./validators";
 
-const ACTIVE_TASK_STATUSES = [
+const ACTIVE_TASK_STATUSES: readonly TaskStatus[] = [
   "pending",
   "scheduled",
   "assigned",
   "en_route",
-] as const;
+];
 
 export async function getActiveTaskForBin(
   ctx: QueryCtx,

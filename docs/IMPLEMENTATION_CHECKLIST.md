@@ -220,6 +220,12 @@ Update this table after completing each phase.
 * [x] Add an environment example file without secrets.
 * [x] Ensure environment secrets are not exposed to browser code.
 * [x] Confirm the Next.js application can connect to the Convex development deployment.
+* [x] Link the project to the product owner’s Convex account.
+* [x] Select an account-backed cloud development deployment for ongoing development.
+* [x] Configure the local environment to use the cloud development deployment instead of the temporary `127.0.0.1` deployment.
+* [x] Push the approved schema and Convex functions to the cloud development deployment.
+* [x] Restore the approved Bariga demo dataset in the cloud development deployment.
+* [ ] Configure the Convex production deployment when preparing the Vercel release.
 
 ## Project organisation
 
