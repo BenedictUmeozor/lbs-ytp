@@ -11,7 +11,10 @@ export const list = internalQuery({
 export const getActive = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const route = await ctx.db.query("routes").withIndex("by_status", (q) => q.eq("status", "active")).first();
+    const route = await ctx.db
+      .query("routes")
+      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .first();
     return route === null ? null : getRouteOperationalRecord(ctx, route);
   },
 });

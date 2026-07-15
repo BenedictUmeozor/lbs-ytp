@@ -2,7 +2,10 @@ import { v } from "convex/values";
 
 import { internalQuery, query } from "./_generated/server";
 import { getPublicReportStatus } from "./domain/status_rules";
-import { publicReportStatusValidator, reportCategoryValidator } from "./domain/validators";
+import {
+  publicReportStatusValidator,
+  reportCategoryValidator,
+} from "./domain/validators";
 
 export const list = internalQuery({
   args: {},
@@ -32,13 +35,23 @@ export const getPublicByReference = query({
   returns: publicReportValidator,
   handler: async (ctx, args) => {
     const referenceNumber = args.referenceNumber.trim().toUpperCase();
-    if (referenceNumber.length === 0) throw new Error("referenceNumber must not be empty.");
-    const report = await ctx.db.query("citizenReports").withIndex("by_referenceNumber", (q) => q.eq("referenceNumber", referenceNumber)).unique();
+    if (referenceNumber.length === 0)
+      throw new Error("referenceNumber must not be empty.");
+    const report = await ctx.db
+      .query("citizenReports")
+      .withIndex("by_referenceNumber", (q) =>
+        q.eq("referenceNumber", referenceNumber),
+      )
+      .unique();
     if (report === null) return null;
     return {
       referenceNumber: report.referenceNumber,
       category: report.category,
-      locationSummary: report.landmarkText ?? (report.latitude !== undefined && report.longitude !== undefined ? "Location shared by resident" : "Location unavailable"),
+      locationSummary:
+        report.landmarkText ??
+        (report.latitude !== undefined && report.longitude !== undefined
+          ? "Location shared by resident"
+          : "Location unavailable"),
       publicStatus: getPublicReportStatus(report.status),
       submittedAt: report._creationTime,
       lastStatusUpdate: report.statusUpdatedAt,

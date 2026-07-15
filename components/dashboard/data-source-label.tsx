@@ -3,7 +3,13 @@ import { cn } from "@/lib/utils";
 
 type DataSource = "real" | "simulated";
 
-export function DataSourceLabel({ source, className }: { source: DataSource; className?: string }) {
+export function DataSourceLabel({
+  source,
+  className,
+}: {
+  source: DataSource;
+  className?: string;
+}) {
   return (
     <Badge
       variant="outline"

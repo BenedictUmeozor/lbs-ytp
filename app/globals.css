@@ -158,11 +158,16 @@
 }
 
 @keyframes operations-map-critical-pulse {
-  50% { stroke-width: 5; stroke-opacity: 0.45; }
+  50% {
+    stroke-width: 5;
+    stroke-opacity: 0.45;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .operations-map-critical-marker { animation: none; }
+  .operations-map-critical-marker {
+    animation: none;
+  }
 }
 
 @layer base {

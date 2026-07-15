@@ -12,7 +12,10 @@ export async function requireFleetManager(ctx: AuthContext) {
     throw new Error("Not authenticated.");
   }
 
-  if (typeof identity.email !== "string" || identity.email.trim().length === 0) {
+  if (
+    typeof identity.email !== "string" ||
+    identity.email.trim().length === 0
+  ) {
     throw new Error("A verified primary email is required.");
   }
 

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useConvexAuth, useQuery } from "convex/react";
 import {
   AlertOctagon,
@@ -15,14 +14,8 @@ import {
   Truck,
   Wrench,
 } from "lucide-react";
+import Link from "next/link";
 
-import { api } from "@/convex/_generated/api";
-import { PageHeader } from "@/components/dashboard/page-header";
-import { SummaryCard } from "@/components/dashboard/summary-card";
-import {
-  StatusBadge,
-  humanizeStatus,
-} from "@/components/dashboard/status-badge";
 import { DataSourceLabel } from "@/components/dashboard/data-source-label";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
@@ -30,6 +23,12 @@ import {
   SummaryCardSkeleton,
 } from "@/components/dashboard/loading-skeleton";
 import type { OverviewData } from "@/components/dashboard/overview-types";
+import { PageHeader } from "@/components/dashboard/page-header";
+import {
+  StatusBadge,
+  humanizeStatus,
+} from "@/components/dashboard/status-badge";
+import { SummaryCard } from "@/components/dashboard/summary-card";
 import { OperationsMapLegend } from "@/components/maps/operations-map-legend";
 import { OperationsMapPreview } from "@/components/maps/operations-map-preview";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +41,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/convex/_generated/api";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-NG", {
   timeZone: "Africa/Lagos",
@@ -206,7 +206,7 @@ function OperationsMapCard({ map }: { map: OverviewData["map"] }) {
       <OperationsMapLegend />
       <Link
         href="/dashboard/map"
-        className="inline-block text-sm font-medium text-primary hover:underline"
+        className="text-primary inline-block text-sm font-medium hover:underline"
       >
         Open full map
       </Link>
@@ -239,18 +239,18 @@ function CriticalAlertsCard({
             {alerts.map((alert) => (
               <li
                 key={alert.id}
-                className="space-y-1 border-b border-border pb-3 last:border-0 last:pb-0"
+                className="border-border space-y-1 border-b pb-3 last:border-0 last:pb-0"
               >
                 <div className="flex items-center justify-between gap-2">
                   <StatusBadge status={alert.severity} />
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     {formatDateTime(alert.createdAt)}
                   </span>
                 </div>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-foreground text-sm font-medium">
                   {alert.title}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {alert.description}
                 </p>
               </li>
@@ -287,22 +287,22 @@ function RecentActivityCard({
             {activity.map((event) => (
               <li
                 key={event.id}
-                className="space-y-1 border-b border-border pb-3 last:border-0 last:pb-0"
+                className="border-border space-y-1 border-b pb-3 last:border-0 last:pb-0"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="text-foreground text-sm font-medium">
                     {humanizeStatus(event.eventType)}
                   </p>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     {formatDateTime(event.createdAt)}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {event.description}
                 </p>
                 {event.previousStatus !== undefined &&
                 event.nextStatus !== undefined ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {humanizeStatus(event.previousStatus)} →{" "}
                     {humanizeStatus(event.nextStatus)}
                   </p>
@@ -340,7 +340,7 @@ function CollectionProgressCard({
           <>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-foreground">
+                <span className="text-foreground font-medium">
                   {progress.completionPercentage}% collected
                 </span>
                 <span className="text-muted-foreground">
@@ -356,25 +356,25 @@ function CollectionProgressCard({
             <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               <div>
                 <dt className="text-muted-foreground">Pending</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {progress.pendingCount}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Active</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {progress.activeCount}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Collected</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {progress.collectedCount}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Unable to complete</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {progress.unableToCompleteCount}
                 </dd>
               </div>
@@ -405,10 +405,10 @@ function ActiveRouteCard({ route }: { route: OverviewData["activeRoute"] }) {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-foreground text-sm font-medium">
                   {route.displayId}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Truck {route.truckDisplayId}
                 </p>
               </div>
@@ -417,44 +417,44 @@ function ActiveRouteCard({ route }: { route: OverviewData["activeRoute"] }) {
             <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
               <div>
                 <dt className="text-muted-foreground">Total stops</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {route.totalStops}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Current stop</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {route.currentStopNumber}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Completed stops</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {route.completedStops}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Remaining stops</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {route.remainingStops}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Est. distance</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {route.estimatedDistanceKm.toFixed(1)} km
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Est. duration</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="text-foreground font-medium">
                   {route.estimatedDurationMinutes} min
                 </dd>
               </div>
             </dl>
             <Link
               href="/dashboard/routes"
-              className="inline-block text-sm font-medium text-primary hover:underline"
+              className="text-primary inline-block text-sm font-medium hover:underline"
             >
               Open Routes
             </Link>
@@ -496,11 +496,11 @@ function VehicleHealthCard({
               {trucks.map((truck) => (
                 <li
                   key={truck.id}
-                  className="space-y-1 border-b border-border pb-3 last:border-0 last:pb-0"
+                  className="border-border space-y-1 border-b pb-3 last:border-0 last:pb-0"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="text-foreground text-sm font-medium">
                         {truck.displayId}
                       </p>
                       <StatusBadge status={truck.maintenanceRisk} />
@@ -508,18 +508,18 @@ function VehicleHealthCard({
                     </div>
                     <DataSourceLabel source={truck.source} />
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Driver {truck.driverName} · Battery{" "}
                     {truck.batteryPercentage}% · Engine health{" "}
                     {truck.engineHealthScore}
                   </p>
                   {truck.reportedFault !== undefined ? (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Fault: {truck.reportedFault}
                     </p>
                   ) : null}
                   {truck.nextRecommendedServiceAt !== undefined ? (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Next service:{" "}
                       {formatDateTime(truck.nextRecommendedServiceAt)}
                     </p>
@@ -529,7 +529,7 @@ function VehicleHealthCard({
             </ul>
             <Link
               href="/dashboard/fleet?view=maintenance_alerts"
-              className="inline-block text-sm font-medium text-primary hover:underline"
+              className="text-primary inline-block text-sm font-medium hover:underline"
             >
               Open Fleet & Maintenance
             </Link>

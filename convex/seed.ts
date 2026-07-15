@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import type { Id, TableNames } from "./_generated/dataModel";
 import { internalMutation, type MutationCtx } from "./_generated/server";
+import { normalizeEmail } from "./domain/auth";
 import {
   demoBins,
   demoDevices,
@@ -12,8 +13,10 @@ import {
   demoTrucks,
   globalSettings,
 } from "./domain/demo_data";
-import { normalizeEmail } from "./domain/auth";
-import { insertActivityEvent, insertNotification } from "./domain/write_helpers";
+import {
+  insertActivityEvent,
+  insertNotification,
+} from "./domain/write_helpers";
 
 const MVP_TABLES = [
   "activityEvents",
@@ -69,13 +72,15 @@ async function getDatasetCounts(ctx: MutationCtx): Promise<DatasetCounts> {
     bins: (await ctx.db.query("bins").collect()).length,
     sensorReadings: (await ctx.db.query("sensorReadings").collect()).length,
     citizenReports: (await ctx.db.query("citizenReports").collect()).length,
-    whatsappConversations: (await ctx.db.query("whatsappConversations").collect())
-      .length,
+    whatsappConversations: (
+      await ctx.db.query("whatsappConversations").collect()
+    ).length,
     collectionTasks: (await ctx.db.query("collectionTasks").collect()).length,
     trucks: (await ctx.db.query("trucks").collect()).length,
     routes: (await ctx.db.query("routes").collect()).length,
     routeStops: (await ctx.db.query("routeStops").collect()).length,
-    maintenanceAlerts: (await ctx.db.query("maintenanceAlerts").collect()).length,
+    maintenanceAlerts: (await ctx.db.query("maintenanceAlerts").collect())
+      .length,
     notifications: (await ctx.db.query("notifications").collect()).length,
     activityEvents: (await ctx.db.query("activityEvents").collect()).length,
     settings: (await ctx.db.query("settings").collect()).length,
@@ -96,7 +101,9 @@ async function hasAnyMvpRecords(ctx: MutationCtx): Promise<boolean> {
 function getDemoFleetManagerEmail(): string {
   const configuredEmail = process.env.DEMO_FLEET_MANAGER_EMAIL;
   if (configuredEmail === undefined || configuredEmail.trim().length === 0) {
-    throw new Error("DEMO_FLEET_MANAGER_EMAIL must be configured before seeding demo data.");
+    throw new Error(
+      "DEMO_FLEET_MANAGER_EMAIL must be configured before seeding demo data.",
+    );
   }
 
   return normalizeEmail(configuredEmail);
@@ -127,7 +134,11 @@ async function ensureDemoFleetManager(
   });
 }
 
-async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManagerEmail: string): Promise<void> {
+async function insertDemoDataset(
+  ctx: MutationCtx,
+  now: number,
+  demoFleetManagerEmail: string,
+): Promise<void> {
   await ctx.db.insert("settings", globalSettings);
   await ensureDemoFleetManager(ctx, demoFleetManagerEmail);
 
@@ -191,7 +202,9 @@ async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManager
     const binId = binIds.get(device.binDisplayId);
     const deviceId = deviceIds.get(device.deviceIdentifier);
     if (binId === undefined || deviceId === undefined) {
-      throw new Error(`Missing seeded device relationship for ${device.deviceIdentifier}.`);
+      throw new Error(
+        `Missing seeded device relationship for ${device.deviceIdentifier}.`,
+      );
     }
     await ctx.db.patch("bins", binId, { deviceId });
   }
@@ -202,11 +215,14 @@ async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManager
     const binId = binIds.get(bin.displayId);
     const deviceId = deviceIds.get(demoDevices[index].deviceIdentifier);
     if (binId === undefined || deviceId === undefined) {
-      throw new Error(`Missing seeded reading relationship for ${bin.displayId}.`);
+      throw new Error(
+        `Missing seeded reading relationship for ${bin.displayId}.`,
+      );
     }
 
     for (const [readingIndex, fillPercentage] of bin.readings.entries()) {
-      const recordedAt = now - readingOffsets[readingIndex] * MINUTE_IN_MILLISECONDS;
+      const recordedAt =
+        now - readingOffsets[readingIndex] * MINUTE_IN_MILLISECONDS;
       const readingId = await ctx.db.insert("sensorReadings", {
         deviceId,
         binId,
@@ -237,7 +253,8 @@ async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManager
       needsClarification: report.needsClarification,
       aiStatus: report.aiStatus,
       status: report.status,
-      statusUpdatedAt: now - report.statusUpdatedMinutesAgo * MINUTE_IN_MILLISECONDS,
+      statusUpdatedAt:
+        now - report.statusUpdatedMinutesAgo * MINUTE_IN_MILLISECONDS,
       duplicateCandidateReportIds: [],
       resolvedAt:
         report.resolvedMinutesAgo === undefined
@@ -249,15 +266,18 @@ async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManager
 
   const taskIds = new Map<string, Id<"collectionTasks">>();
   for (const task of demoTasks) {
-    const sourceBinId = task.sourceBinDisplayId === undefined
-      ? undefined
-      : binIds.get(task.sourceBinDisplayId);
-    const sourceReportId = task.sourceReportReference === undefined
-      ? undefined
-      : reportIds.get(task.sourceReportReference);
-    const assignedTruckId = task.assignedTruckDisplayId === undefined
-      ? undefined
-      : truckIds.get(task.assignedTruckDisplayId);
+    const sourceBinId =
+      task.sourceBinDisplayId === undefined
+        ? undefined
+        : binIds.get(task.sourceBinDisplayId);
+    const sourceReportId =
+      task.sourceReportReference === undefined
+        ? undefined
+        : reportIds.get(task.sourceReportReference);
+    const assignedTruckId =
+      task.assignedTruckDisplayId === undefined
+        ? undefined
+        : truckIds.get(task.assignedTruckDisplayId);
     const linkedReportIds = task.linkedReportReferences.map((reference) => {
       const reportId = reportIds.get(reference);
       if (reportId === undefined) {
@@ -268,10 +288,14 @@ async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManager
 
     if (
       (task.sourceBinDisplayId !== undefined && sourceBinId === undefined) ||
-      (task.sourceReportReference !== undefined && sourceReportId === undefined) ||
-      (task.assignedTruckDisplayId !== undefined && assignedTruckId === undefined)
+      (task.sourceReportReference !== undefined &&
+        sourceReportId === undefined) ||
+      (task.assignedTruckDisplayId !== undefined &&
+        assignedTruckId === undefined)
     ) {
-      throw new Error(`Missing seeded task relationship for ${task.displayId}.`);
+      throw new Error(
+        `Missing seeded task relationship for ${task.displayId}.`,
+      );
     }
 
     const taskId = await ctx.db.insert("collectionTasks", {
@@ -286,7 +310,8 @@ async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManager
       reason: task.reason,
       status: task.status,
       assignedTruckId,
-      statusUpdatedAt: now - task.statusUpdatedMinutesAgo * MINUTE_IN_MILLISECONDS,
+      statusUpdatedAt:
+        now - task.statusUpdatedMinutesAgo * MINUTE_IN_MILLISECONDS,
       completedAt:
         task.completedMinutesAgo === undefined
           ? undefined
@@ -303,7 +328,9 @@ async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManager
     const reportId = reportIds.get(reportReference);
     const taskId = taskIds.get(taskDisplayId);
     if (reportId === undefined || taskId === undefined) {
-      throw new Error(`Missing seeded report-task relationship for ${reportReference}.`);
+      throw new Error(
+        `Missing seeded report-task relationship for ${reportReference}.`,
+      );
     }
     await ctx.db.patch("citizenReports", reportId, { linkedTaskId: taskId });
   }
@@ -325,13 +352,16 @@ async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManager
   }
 
   for (const notification of demoNotifications) {
-    const relatedEntityId = notification.relatedEntityType === "bin"
-      ? binIds.get(notification.relatedEntityKey)
-      : notification.relatedEntityType === "citizen_report"
-        ? reportIds.get(notification.relatedEntityKey)
-        : truckIds.get(notification.relatedEntityKey);
+    const relatedEntityId =
+      notification.relatedEntityType === "bin"
+        ? binIds.get(notification.relatedEntityKey)
+        : notification.relatedEntityType === "citizen_report"
+          ? reportIds.get(notification.relatedEntityKey)
+          : truckIds.get(notification.relatedEntityKey);
     if (relatedEntityId === undefined) {
-      throw new Error(`Missing notification relationship for ${notification.title}.`);
+      throw new Error(
+        `Missing notification relationship for ${notification.title}.`,
+      );
     }
     await insertNotification(
       ctx,
@@ -354,22 +384,127 @@ async function insertDemoDataset(ctx: MutationCtx, now: number, demoFleetManager
     return id;
   };
 
-  await insertActivityEvent(ctx, "sensor_reading_received", "Latest reading received from BG-001.", "sensor_reading", requireId(readingIds.get("BG-001"), "BG-001 reading"));
-  await insertActivityEvent(ctx, "sensor_reading_received", "Latest reading received from BG-002.", "sensor_reading", requireId(readingIds.get("BG-002"), "BG-002 reading"));
-  await insertActivityEvent(ctx, "sensor_reading_received", "Latest reading received from BG-003.", "sensor_reading", requireId(readingIds.get("BG-003"), "BG-003 reading"));
-  await insertActivityEvent(ctx, "bin_status_changed", "BG-002 reached collection required.", "bin", requireId(binIds.get("BG-002"), "BG-002 bin"), undefined, "approaching_full", "collection_required");
-  await insertActivityEvent(ctx, "bin_status_changed", "BG-003 reached critical.", "bin", requireId(binIds.get("BG-003"), "BG-003 bin"), undefined, "collection_required", "critical");
-  await insertActivityEvent(ctx, "report_submitted", "WR-1001 was submitted.", "citizen_report", requireId(reportIds.get("WR-1001"), "WR-1001 report"));
-  await insertActivityEvent(ctx, "report_classified", "WR-1001 was classified as high priority.", "citizen_report", requireId(reportIds.get("WR-1001"), "WR-1001 report"));
-  await insertActivityEvent(ctx, "report_submitted", "WR-1002 was submitted.", "citizen_report", requireId(reportIds.get("WR-1002"), "WR-1002 report"));
-  await insertActivityEvent(ctx, "report_classified", "WR-1002 was classified as critical.", "citizen_report", requireId(reportIds.get("WR-1002"), "WR-1002 report"));
-  await insertActivityEvent(ctx, "task_created", "CT-001 was created from BG-003.", "collection_task", requireId(taskIds.get("CT-001"), "CT-001 task"));
-  await insertActivityEvent(ctx, "task_created", "CT-002 was created from BG-002.", "collection_task", requireId(taskIds.get("CT-002"), "CT-002 task"));
-  await insertActivityEvent(ctx, "task_created", "CT-003 was created from WR-1002.", "collection_task", requireId(taskIds.get("CT-003"), "CT-003 task"));
-  await insertActivityEvent(ctx, "task_created", "CT-004 was created from WR-1001.", "collection_task", requireId(taskIds.get("CT-004"), "CT-004 task"));
-  await insertActivityEvent(ctx, "task_status_changed", "CT-005 was collected.", "collection_task", requireId(taskIds.get("CT-005"), "CT-005 task"), undefined, "en_route", "collected");
-  await insertActivityEvent(ctx, "report_resolved", "WR-1006 was resolved.", "citizen_report", requireId(reportIds.get("WR-1006"), "WR-1006 report"));
-  await insertActivityEvent(ctx, "maintenance_alert_created", "High-risk maintenance alert created for TRK-03.", "maintenance_alert", requireId(maintenanceAlertIds.get("TRK-03"), "TRK-03 maintenance alert"));
+  await insertActivityEvent(
+    ctx,
+    "sensor_reading_received",
+    "Latest reading received from BG-001.",
+    "sensor_reading",
+    requireId(readingIds.get("BG-001"), "BG-001 reading"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "sensor_reading_received",
+    "Latest reading received from BG-002.",
+    "sensor_reading",
+    requireId(readingIds.get("BG-002"), "BG-002 reading"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "sensor_reading_received",
+    "Latest reading received from BG-003.",
+    "sensor_reading",
+    requireId(readingIds.get("BG-003"), "BG-003 reading"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "bin_status_changed",
+    "BG-002 reached collection required.",
+    "bin",
+    requireId(binIds.get("BG-002"), "BG-002 bin"),
+    undefined,
+    "approaching_full",
+    "collection_required",
+  );
+  await insertActivityEvent(
+    ctx,
+    "bin_status_changed",
+    "BG-003 reached critical.",
+    "bin",
+    requireId(binIds.get("BG-003"), "BG-003 bin"),
+    undefined,
+    "collection_required",
+    "critical",
+  );
+  await insertActivityEvent(
+    ctx,
+    "report_submitted",
+    "WR-1001 was submitted.",
+    "citizen_report",
+    requireId(reportIds.get("WR-1001"), "WR-1001 report"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "report_classified",
+    "WR-1001 was classified as high priority.",
+    "citizen_report",
+    requireId(reportIds.get("WR-1001"), "WR-1001 report"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "report_submitted",
+    "WR-1002 was submitted.",
+    "citizen_report",
+    requireId(reportIds.get("WR-1002"), "WR-1002 report"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "report_classified",
+    "WR-1002 was classified as critical.",
+    "citizen_report",
+    requireId(reportIds.get("WR-1002"), "WR-1002 report"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "task_created",
+    "CT-001 was created from BG-003.",
+    "collection_task",
+    requireId(taskIds.get("CT-001"), "CT-001 task"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "task_created",
+    "CT-002 was created from BG-002.",
+    "collection_task",
+    requireId(taskIds.get("CT-002"), "CT-002 task"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "task_created",
+    "CT-003 was created from WR-1002.",
+    "collection_task",
+    requireId(taskIds.get("CT-003"), "CT-003 task"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "task_created",
+    "CT-004 was created from WR-1001.",
+    "collection_task",
+    requireId(taskIds.get("CT-004"), "CT-004 task"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "task_status_changed",
+    "CT-005 was collected.",
+    "collection_task",
+    requireId(taskIds.get("CT-005"), "CT-005 task"),
+    undefined,
+    "en_route",
+    "collected",
+  );
+  await insertActivityEvent(
+    ctx,
+    "report_resolved",
+    "WR-1006 was resolved.",
+    "citizen_report",
+    requireId(reportIds.get("WR-1006"), "WR-1006 report"),
+  );
+  await insertActivityEvent(
+    ctx,
+    "maintenance_alert_created",
+    "High-risk maintenance alert created for TRK-03.",
+    "maintenance_alert",
+    requireId(maintenanceAlertIds.get("TRK-03"), "TRK-03 maintenance alert"),
+  );
 }
 
 const datasetCountsValidator = v.object({
@@ -405,7 +540,10 @@ export const seedDemoData = internalMutation({
 
     if (settings !== null) {
       await ensureDemoFleetManager(ctx, demoFleetManagerEmail);
-      return { status: "already_seeded" as const, counts: await getDatasetCounts(ctx) };
+      return {
+        status: "already_seeded" as const,
+        counts: await getDatasetCounts(ctx),
+      };
     }
 
     if (await hasAnyMvpRecords(ctx)) {

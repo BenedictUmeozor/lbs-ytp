@@ -12,7 +12,13 @@ export function SummaryCardSkeleton() {
   );
 }
 
-export function ContentCardSkeleton({ rows = 3, titleWidth = "w-40" }: { rows?: number; titleWidth?: string }) {
+export function ContentCardSkeleton({
+  rows = 3,
+  titleWidth = "w-40",
+}: {
+  rows?: number;
+  titleWidth?: string;
+}) {
   return (
     <Card>
       <CardHeader>

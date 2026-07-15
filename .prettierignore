@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+build
+coverage
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+convex/_generated
+.agents
+.claude
+docs
+AGENTS.md
+CLAUDE.md
+README.md

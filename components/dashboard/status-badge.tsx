@@ -51,9 +51,12 @@ const STATUS_TONE: Record<string, Tone> = {
 
 const TONE_CLASSES: Record<Tone, string> = {
   neutral: "border-transparent bg-muted text-foreground",
-  positive: "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300",
-  attention: "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
-  critical: "border-transparent bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300",
+  positive:
+    "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300",
+  attention:
+    "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
+  critical:
+    "border-transparent bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300",
 };
 
 export function humanizeStatus(status: string): string {
@@ -63,7 +66,13 @@ export function humanizeStatus(status: string): string {
     .join(" ");
 }
 
-export function StatusBadge({ status, className }: { status: string; className?: string }) {
+export function StatusBadge({
+  status,
+  className,
+}: {
+  status: string;
+  className?: string;
+}) {
   const tone = STATUS_TONE[status] ?? "neutral";
 
   return (
