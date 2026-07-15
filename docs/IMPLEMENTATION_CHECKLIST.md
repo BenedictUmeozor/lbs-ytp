@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 1A
-* **Current milestone:** Project and Convex foundation
+* **Current phase:** Phase 1B
+* **Current milestone:** Convex schema and domain rules
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -141,7 +141,7 @@ Update this table after completing each phase.
 | Phase    | Status  | Completion date | Handoff summary |
 | -------- | ------- | --------------- | --------------- |
 | Phase 0  | Pending | —               | —               |
-| Phase 1A | Pending | —               | —               |
+| Phase 1A | Complete | 2026-07-15 | Phase 1A established the project foundation. Convex is installed and connected through a dedicated client provider, generated Convex types are available, shadcn/ui is initialized for Tailwind CSS v4 without UI components, and environment-variable handling is documented safely. No schema, domain logic, seed data, authentication or product UI has been implemented. Phase 1B should begin by defining the Convex schema, indexes, domain status constants and allowed status transitions from the approved PRD. |
 | Phase 1B | Pending | —               | —               |
 | Phase 1C | Pending | —               | —               |
 | Phase 2  | Pending | —               | —               |
@@ -201,25 +201,25 @@ Update this table after completing each phase.
 
 ## Project dependencies
 
-* [ ] Install the Convex client and server dependencies.
-* [ ] Initialise Convex using the official project structure.
-* [ ] Preserve the existing Next.js App Router structure.
-* [ ] Avoid adding dependencies not required by the approved MVP.
-* [ ] Confirm Tailwind CSS remains functional.
-* [ ] Prepare the project for shadcn/ui without adding unused components.
-* [ ] Add only the shared utility dependencies required by installed UI components.
+* [x] Install the Convex client and server dependencies.
+* [x] Initialise Convex using the official project structure.
+* [x] Preserve the existing Next.js App Router structure.
+* [x] Avoid adding dependencies not required by the approved MVP.
+* [x] Confirm Tailwind CSS remains functional.
+* [x] Prepare the project for shadcn/ui without adding unused components.
+* [x] Add only the shared utility dependencies required by installed UI components.
 
 ## Convex connection
 
-* [ ] Create the Convex backend directory.
-* [ ] Generate the required Convex client types.
-* [ ] Add the Convex client provider at the appropriate application boundary.
-* [ ] Keep the root layout a Server Component where possible.
-* [ ] Isolate only required providers as Client Components.
-* [ ] Configure the public Convex URL through environment variables.
-* [ ] Add an environment example file without secrets.
-* [ ] Ensure environment secrets are not exposed to browser code.
-* [ ] Confirm the Next.js application can connect to the Convex development deployment.
+* [x] Create the Convex backend directory.
+* [x] Generate the required Convex client types.
+* [x] Add the Convex client provider at the appropriate application boundary.
+* [x] Keep the root layout a Server Component where possible.
+* [x] Isolate only required providers as Client Components.
+* [x] Configure the public Convex URL through environment variables.
+* [x] Add an environment example file without secrets.
+* [x] Ensure environment secrets are not exposed to browser code.
+* [x] Confirm the Next.js application can connect to the Convex development deployment.
 
 ## Project organisation
 
@@ -228,19 +228,19 @@ Update this table after completing each phase.
 * [ ] Establish folders for shared constants and domain helpers.
 * [ ] Establish folders for public-app components.
 * [ ] Establish folders for fleet-dashboard components.
-* [ ] Avoid premature abstraction.
-* [ ] Avoid adding a separate API server.
+* [x] Avoid premature abstraction.
+* [x] Avoid adding a separate API server.
 
 ## Foundation acceptance criteria
 
-* [ ] The application starts with the Convex provider configured.
-* [ ] Convex-generated types are available.
-* [ ] Environment configuration is documented.
-* [ ] No secrets are committed.
-* [ ] Existing application behaviour is not broken.
-* [ ] Only required dependencies have been introduced.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 1A handoff summary is recorded.
+* [x] The application starts with the Convex provider configured.
+* [x] Convex-generated types are available.
+* [x] Environment configuration is documented.
+* [x] No secrets are committed.
+* [x] Existing application behaviour is not broken.
+* [x] Only required dependencies have been introduced.
+* [x] Checks for touched files pass.
+* [x] The Phase 1A handoff summary is recorded.
 
 ---
 
