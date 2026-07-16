@@ -1,13 +1,6 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
-import type { TaskStatus } from "./validators";
-
-const ACTIVE_TASK_STATUSES: readonly TaskStatus[] = [
-  "pending",
-  "scheduled",
-  "assigned",
-  "en_route",
-];
+import { isActiveTaskStatus } from "./task_rules";
 
 export async function getActiveTaskForBin(
   ctx: QueryCtx,
@@ -18,9 +11,7 @@ export async function getActiveTaskForBin(
     .withIndex("by_sourceBinId", (q) => q.eq("sourceBinId", binId))
     .collect();
 
-  return (
-    tasks.find((task) => ACTIVE_TASK_STATUSES.includes(task.status)) ?? null
-  );
+  return tasks.find((task) => isActiveTaskStatus(task.status)) ?? null;
 }
 
 export async function getBinOperationalRecord(ctx: QueryCtx, bin: Doc<"bins">) {

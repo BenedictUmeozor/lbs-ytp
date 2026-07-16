@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 8
-* **Current milestone:** Collection Tasks and Automatic Scheduling Rules
+* **Current phase:** Phase 9
+* **Current milestone:** Route Generation and Active-Route Operations
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -151,7 +151,7 @@ Update this table after completing each phase.
 | Phase 5  | Complete | 2026-07-16 | Public unauthenticated reporting stores the resident-selected category, original message, browser coordinates or typed landmark, optional private Convex File Storage photo ID, and a sequential report reference. Submitted and tracking views use public-safe real-time status subscriptions; raw landmarks and coordinates are excluded from public tracking. Structured field-level Convex application errors, safe unexpected-error messaging, a public route error boundary and accessible location/form corrections are complete. New reports remain `status: new` and `aiStatus: pending`; Phase 6 owns Nominatim resolution and Gemini triage. D-04 remains unresolved. |
 | Phase 6  | Complete | 2026-07-16 | Asynchronous processing has monotonic attempt versions, stale-result guards, six-minute recovery checks, and a three-attempt limit. Nominatim has an eight-second timeout, caches definitive unusable results, and accepts only in-pilot locations. Gemini uses `timeout_ms: 15000` with SDK retries disabled, makes at most two application-level requests, and does not retry permanent 4xx errors. Fallback preserves successful location resolution. Outside-pilot GPS and unresolved reports are excluded from both operational maps while compatible completed/fallback legacy seeded markers remain visible. No collection tasks, duplicate detection, dashboard, or messaging were added. |
 | Phase 7  | Complete | 2026-07-16 | Protected report actions wait for Phase 6 processing to settle and remain server-side guarded. Managers can repair incomplete classifications before confirming them, and stale action forms close after live updates invalidate their actions. Submitted GPS evidence and valid operational coordinates are shown distinctly, compact-map markers fit both points, report deep links focus the operations map safely, and automatic task workflows remain deferred to Phase 8. |
-| Phase 8  | Pending | —               | —               |
+| Phase 8  | Complete | 2026-07-16 | Automatic report-task eligibility rules are implemented for High and Critical reports with settled processing, valid operational coordinates and collection recommendations. Nearby same-category active tasks create fleet-manager review candidates instead of duplicates; managers can link the report or explicitly create a separate task. Task lifecycle transitions are centrally enforced, linked reports and smart bins are synchronised, and smart-bin collection now enters awaiting-empty-confirmation rather than claiming an empty bin. The protected Collection Tasks dashboard provides live lists, URL filters, details, lifecycle actions and proposed-route task linking. Route generation, optimisation and truck operations remain unimplemented. Phase 9 should reuse the task and proposed-route helpers rather than duplicating them. |
 | Phase 9  | Pending | —               | —               |
 | Phase 10 | Pending | —               | —               |
 | Phase 11 | Pending | —               | —               |
@@ -1142,113 +1142,113 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Automatic creation rules
 
-* [ ] Create a task when a smart bin reaches 80% or the configured threshold.
-* [ ] Create a task for a High report that requires collection and has valid coordinates.
-* [ ] Create a task for a Critical report that requires collection and has valid coordinates.
-* [ ] Create task and activity records atomically where required.
+* [x] Create a task when a smart bin reaches 80% or the configured threshold.
+* [x] Create a task for a High report that requires collection and has valid coordinates.
+* [x] Create a task for a Critical report that requires collection and has valid coordinates.
+* [x] Create task and activity records atomically where required.
 
 ## Do-not-create rules
 
-* [ ] Do not create a task when location is unclear.
-* [ ] Do not create a task when coordinates are missing.
-* [ ] Do not automatically create a task for Low reports.
-* [ ] Do not automatically create a task for Medium reports.
-* [ ] Do not automatically create an illegal-dumpsite task requiring investigation.
-* [ ] Do not create a task when a matching active task already exists.
-* [ ] Do not create a task for a duplicate report.
-* [ ] Do not create a task for a rejected report.
+* [x] Do not create a task when location is unclear.
+* [x] Do not create a task when coordinates are missing.
+* [x] Do not automatically create a task for Low reports.
+* [x] Do not automatically create a task for Medium reports.
+* [x] Do not automatically create an illegal-dumpsite task requiring investigation.
+* [x] Do not create a task when a matching active task already exists.
+* [x] Do not create a task for a duplicate report.
+* [x] Do not create a task for a rejected report.
 
 ## Duplicate prevention
 
-* [ ] Check for an existing active task for the same bin.
-* [ ] Check for an active task within the configured radius.
-* [ ] Consider task category similarity.
-* [ ] Consider unresolved task status.
-* [ ] Link possible duplicates for fleet-manager review.
-* [ ] Do not automatically merge reports or tasks.
-* [ ] Do not create a second task until a possible match is reviewed.
+* [x] Check for an existing active task for the same bin.
+* [x] Check for an active task within the configured radius.
+* [x] Consider task category similarity.
+* [x] Consider unresolved task status.
+* [x] Link possible duplicates for fleet-manager review.
+* [x] Do not automatically merge reports or tasks.
+* [x] Do not create a second task until a possible match is reviewed.
 
 ## Task statuses
 
-* [ ] Support Pending.
-* [ ] Support Scheduled.
-* [ ] Support Assigned.
-* [ ] Support En route.
-* [ ] Support Collected.
-* [ ] Support Unable to complete.
-* [ ] Support Cancelled.
-* [ ] Enforce Pending → Scheduled.
-* [ ] Enforce Scheduled → Assigned.
-* [ ] Enforce Assigned → En route.
-* [ ] Enforce En route → Collected.
-* [ ] Allow approved active statuses → Unable to complete.
-* [ ] Allow Pending or Scheduled → Cancelled.
-* [ ] Keep completed and cancelled tasks immutable except approved notes.
+* [x] Support Pending.
+* [x] Support Scheduled.
+* [x] Support Assigned.
+* [x] Support En route.
+* [x] Support Collected.
+* [x] Support Unable to complete.
+* [x] Support Cancelled.
+* [x] Enforce Pending → Scheduled.
+* [x] Enforce Scheduled → Assigned.
+* [x] Enforce Assigned → En route.
+* [x] Enforce En route → Collected.
+* [x] Allow approved active statuses → Unable to complete.
+* [x] Allow Pending or Scheduled → Cancelled.
+* [x] Keep completed and cancelled tasks immutable except approved notes.
 
 ## Collection Tasks page
 
-* [ ] Display task ID.
-* [ ] Display source.
-* [ ] Display location.
-* [ ] Display coordinates.
-* [ ] Display priority.
-* [ ] Display reason.
-* [ ] Display status.
-* [ ] Display assigned truck.
-* [ ] Display route.
-* [ ] Display creation time.
-* [ ] Display completion time.
+* [x] Display task ID.
+* [x] Display source.
+* [x] Display location.
+* [x] Display coordinates.
+* [x] Display priority.
+* [x] Display reason.
+* [x] Display status.
+* [x] Display assigned truck.
+* [x] Display route.
+* [x] Display creation time.
+* [x] Display completion time.
 
 ## Task filters
 
-* [ ] Filter pending tasks.
-* [ ] Filter scheduled tasks.
-* [ ] Filter assigned tasks.
-* [ ] Filter en-route tasks.
-* [ ] Filter collected tasks.
-* [ ] Filter unable-to-complete tasks.
-* [ ] Filter cancelled tasks.
-* [ ] Filter by priority.
-* [ ] Filter by source.
+* [x] Filter pending tasks.
+* [x] Filter scheduled tasks.
+* [x] Filter assigned tasks.
+* [x] Filter en-route tasks.
+* [x] Filter collected tasks.
+* [x] Filter unable-to-complete tasks.
+* [x] Filter cancelled tasks.
+* [x] Filter by priority.
+* [x] Filter by source.
 
 ## Task detail and actions
 
-* [ ] Show source reference.
-* [ ] Show related bin or report details.
-* [ ] Show coordinates.
-* [ ] Show active route.
-* [ ] Show assigned truck.
-* [ ] Show status history.
-* [ ] Show scheduled and completion times.
-* [ ] Show related citizen reports.
-* [ ] Allow priority editing.
-* [ ] Allow assignment to a route.
-* [ ] Allow removal from an unstarted route.
-* [ ] Allow unable-to-complete status.
-* [ ] Allow permitted cancellation.
-* [ ] Allow collected status.
-* [ ] Link to map location.
+* [x] Show source reference.
+* [x] Show related bin or report details.
+* [x] Show coordinates.
+* [x] Show active route.
+* [x] Show assigned truck.
+* [x] Show status history.
+* [x] Show scheduled and completion times.
+* [x] Show related citizen reports.
+* [x] Allow priority editing.
+* [x] Allow assignment to a route.
+* [x] Allow removal from an unstarted route.
+* [x] Allow unable-to-complete status.
+* [x] Allow permitted cancellation.
+* [x] Allow collected status.
+* [x] Link to map location.
 
 ## Linked-record behaviour
 
-* [ ] Updating a task updates its linked bin where required.
-* [ ] Updating a task updates its linked report where required.
-* [ ] Completing a report task resolves the report.
-* [ ] Smart-bin completion waits for sensor or manual confirmation.
-* [ ] Preserve status history.
-* [ ] Create activity events for task changes.
-* [ ] Create a notification when a task becomes unable to complete.
+* [x] Updating a task updates its linked bin where required.
+* [x] Updating a task updates its linked report where required.
+* [x] Completing a report task resolves the report.
+* [x] Smart-bin completion waits for sensor or manual confirmation.
+* [x] Preserve status history.
+* [x] Create activity events for task changes.
+* [x] Create a notification when a task becomes unable to complete.
 
 ## Tasks acceptance criteria
 
-* [ ] Only pending tasks can be selected for a new route.
-* [ ] A task belongs to no more than one active route.
-* [ ] Cancelled tasks do not appear in route generation.
-* [ ] Automatic task creation follows approved rules.
-* [ ] Duplicate task prevention works.
-* [ ] Linked report and bin states remain consistent.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 8 handoff summary is recorded.
+* [x] Only pending tasks can be selected for a new route.
+* [x] A task belongs to no more than one active route.
+* [x] Cancelled tasks do not appear in route generation.
+* [x] Automatic task creation follows approved rules.
+* [x] Duplicate task prevention works.
+* [x] Linked report and bin states remain consistent.
+* [x] Checks for touched files pass.
+* [x] The Phase 8 handoff summary is recorded.
 
 ---
 

@@ -106,6 +106,7 @@ export default defineSchema({
     status: reportStatusValidator,
     statusUpdatedAt: v.number(),
     linkedTaskId: v.optional(v.id("collectionTasks")),
+    candidateTaskId: v.optional(v.id("collectionTasks")),
     linkedBinId: v.optional(v.id("bins")),
     duplicateCandidateReportIds: v.array(v.id("citizenReports")),
     resolvedAt: v.optional(v.number()),
@@ -116,6 +117,7 @@ export default defineSchema({
     .index("by_source", ["source"])
     .index("by_duplicateOfReportId", ["duplicateOfReportId"])
     .index("by_linkedTaskId", ["linkedTaskId"])
+    .index("by_candidateTaskId", ["candidateTaskId"])
     .index("by_linkedBinId", ["linkedBinId"]),
 
   geocodingCache: defineTable({

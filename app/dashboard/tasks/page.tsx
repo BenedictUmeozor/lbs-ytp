@@ -1,10 +1,5 @@
-import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
+import { CollectionTasksPage } from "@/components/tasks/collection-tasks-page";
 
 export default function TasksPage() {
-  return (
-    <DashboardPlaceholder
-      title="Collection Tasks"
-      description="Collection-task operations will be implemented in the task-management phase."
-    />
-  );
+  return <CollectionTasksPage />;
 }

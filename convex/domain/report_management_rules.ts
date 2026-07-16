@@ -1,17 +1,15 @@
 import type { Doc } from "../_generated/dataModel";
 import { isCoordinateInsideBarigaPilot } from "./location_rules";
+import {
+  isActiveTaskStatus as isActiveTaskStatusFromTaskRules,
+  reportStatusForTaskStatus as reportStatusForTaskStatusFromTaskRules,
+} from "./task_rules";
 import type { AiStatus, ReportStatus, TaskStatus } from "./validators";
 
 const terminalReportStatuses = new Set<ReportStatus>([
   "resolved",
   "duplicate",
   "rejected",
-]);
-const activeTaskStatuses = new Set<TaskStatus>([
-  "pending",
-  "scheduled",
-  "assigned",
-  "en_route",
 ]);
 
 export function isTerminalReportStatus(status: ReportStatus) {
@@ -27,23 +25,13 @@ export function isReportProcessingActive(aiStatus: AiStatus) {
 }
 
 export function isActiveTaskStatus(status: TaskStatus) {
-  return activeTaskStatuses.has(status);
+  return isActiveTaskStatusFromTaskRules(status);
 }
 
 export function reportStatusForTaskStatus(
   status: TaskStatus,
 ): ReportStatus | null {
-  switch (status) {
-    case "pending":
-      return "task_created";
-    case "scheduled":
-    case "assigned":
-      return "scheduled";
-    case "en_route":
-      return "in_progress";
-    default:
-      return null;
-  }
+  return reportStatusForTaskStatusFromTaskRules(status);
 }
 
 export function haversineDistanceMeters(

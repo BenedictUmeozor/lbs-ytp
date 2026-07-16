@@ -9,6 +9,7 @@ import {
 } from "./_generated/server";
 import { requireFleetManager } from "./domain/auth";
 import { createTaskForBin } from "./domain/task_helpers";
+import { isActiveTaskStatus } from "./domain/task_rules";
 import {
   binStatusValidator,
   dataSourceValidator,
@@ -52,11 +53,7 @@ async function activeTask(ctx: QueryCtx | MutationCtx, binId: Id<"bins">) {
     .query("collectionTasks")
     .withIndex("by_sourceBinId", (q) => q.eq("sourceBinId", binId))
     .collect();
-  return (
-    tasks.find((task) =>
-      ["pending", "scheduled", "assigned", "en_route"].includes(task.status),
-    ) ?? null
-  );
+  return tasks.find((task) => isActiveTaskStatus(task.status)) ?? null;
 }
 
 async function binRow(ctx: QueryCtx | MutationCtx, bin: Doc<"bins">) {

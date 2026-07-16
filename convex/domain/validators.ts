@@ -201,6 +201,9 @@ export const activityEventTypeValidator = v.union(
   v.literal("report_classification_updated"),
   v.literal("report_location_updated"),
   v.literal("report_linked_to_task"),
+  v.literal("report_task_candidate_found"),
+  v.literal("route_task_linked"),
+  v.literal("route_task_unlinked"),
 );
 export type ActivityEventType = Infer<typeof activityEventTypeValidator>;
 

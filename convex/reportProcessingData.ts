@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import { internal } from "./_generated/api";
 import { internalMutation, internalQuery } from "./_generated/server";
+import { evaluateReportForAutomaticTask } from "./domain/report_task_evaluation";
 import {
   locationResolutionStatusValidator,
   priorityValidator,
@@ -282,6 +283,7 @@ export const applyReportProcessingResult = internalMutation({
         nextStatus,
       );
     }
+    await evaluateReportForAutomaticTask(ctx, args.reportId);
     return true;
   },
 });

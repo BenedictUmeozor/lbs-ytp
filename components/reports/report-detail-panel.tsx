@@ -153,6 +153,41 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
                 ({detail.linkedTask.status})
               </p>
             )}
+            {detail.candidateTask && (
+              <section className="rounded border border-amber-300 bg-amber-50 p-3 sm:col-span-2">
+                <h3 className="font-medium">Possible existing task</h3>
+                <p className="mt-1 text-sm">
+                  {detail.candidateTask.displayId} ·{" "}
+                  {detail.candidateTask.sourceType.replaceAll("_", " ")} ·{" "}
+                  {detail.candidateTask.priority} ·{" "}
+                  {detail.candidateTask.status}
+                  {detail.candidateTask.distanceMeters === null
+                    ? ""
+                    : ` · ${Math.round(detail.candidateTask.distanceMeters)}m`}
+                </p>
+                <p className="mt-1 text-sm">{detail.candidateTask.reason}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <CandidateTaskActions detail={detail} />
+                  <Button size="sm" variant="outline" asChild>
+                    <Link
+                      href={`/dashboard/tasks?selected=${detail.candidateTask.id}`}
+                    >
+                      View task details
+                    </Link>
+                  </Button>
+                  {(detail.candidateTask.sourceBinId ||
+                    detail.candidateTask.sourceReportId) && (
+                    <Button size="sm" variant="outline" asChild>
+                      <Link
+                        href={`/dashboard/map?type=${detail.candidateTask.sourceBinId ? "bin" : "report"}&selected=${detail.candidateTask.sourceBinId ?? detail.candidateTask.sourceReportId}`}
+                      >
+                        View task location on map
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </section>
+            )}
             {detail.linkedBin && (
               <p>
                 Linked bin:{" "}
@@ -379,6 +414,95 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function CandidateTaskActions({ detail }: { detail: ReportDetail }) {
+  const linkCandidate = useMutation(api.reportManagement.linkCandidateTask);
+  const createSeparate = useMutation(
+    api.reportManagement.createSeparateCollectionTask,
+  );
+  const [showSeparate, setShowSeparate] = useState(false);
+  const [reason, setReason] = useState("");
+  const [state, setState] = useActionState();
+
+  const link = async () => {
+    if (state.isRunning) return;
+    setState({ message: null, isRunning: true });
+    try {
+      await linkCandidate({ reportId: detail.report.id });
+      setState({
+        message: "Report linked to the reviewed task.",
+        isRunning: false,
+      });
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+  const separate = async () => {
+    if (
+      state.isRunning ||
+      !window.confirm(
+        "Create a separate task after reviewing this possible match?",
+      )
+    )
+      return;
+    setState({ message: null, isRunning: true });
+    try {
+      await createSeparate({ reportId: detail.report.id, reason });
+      setState({ message: "Separate task created.", isRunning: false });
+      setShowSeparate(false);
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+
+  if (showSeparate)
+    return (
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="text-sm">
+          Reason for a separate task
+          <Input
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Why this needs its own task"
+          />
+        </label>
+        <Button
+          size="sm"
+          disabled={state.isRunning || reason.trim().length < 3}
+          onClick={separate}
+        >
+          {state.isRunning ? "Creating…" : "Confirm separate task"}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setShowSeparate(false)}
+        >
+          Close
+        </Button>
+        {state.message && (
+          <p className="w-full text-sm" role="status">
+            {state.message}
+          </p>
+        )}
+      </div>
+    );
+  return (
+    <>
+      <Button size="sm" onClick={link} disabled={state.isRunning}>
+        {state.isRunning ? "Linking…" : "Link to this task"}
+      </Button>
+      <Button size="sm" variant="outline" onClick={() => setShowSeparate(true)}>
+        Create separate task
+      </Button>
+      {state.message && (
+        <p className="w-full text-sm" role="status">
+          {state.message}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -775,11 +899,19 @@ function CreateTaskForm({
     if (state.isRunning) return;
     setState({ message: null, isRunning: true });
     try {
-      await createTask({
+      const result = await createTask({
         reportId: detail.report.id,
         priority: priority,
         reason,
       });
+      if (result.kind === "candidate_found") {
+        setState({
+          message:
+            "A possible existing task needs review before creating another task.",
+          isRunning: false,
+        });
+        return;
+      }
       setReason("");
       onClose();
     } catch (error) {

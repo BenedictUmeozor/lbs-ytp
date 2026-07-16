@@ -14,12 +14,24 @@ import {
   formatReportLocationSummary,
   hasValidOperationalCoordinates,
   haversineDistanceMeters,
-  isActiveTaskStatus,
   isReportProcessingActive,
-  reportStatusForTaskStatus,
   validatedManagerNote,
 } from "./domain/report_management_rules";
-import { createTaskForReport } from "./domain/task_helpers";
+import {
+  candidateStillMatchesReport,
+  candidateTaskForReport,
+  evaluateReportForAutomaticTask,
+} from "./domain/report_task_evaluation";
+import {
+  createTaskForReport,
+  getNearbyActiveTasks,
+  getTaskOperationalCategory,
+} from "./domain/task_helpers";
+import {
+  isActiveTaskStatus,
+  reportStatusForTaskStatus,
+  taskCategoriesMatch,
+} from "./domain/task_rules";
 import {
   priorityValidator,
   reportCategoryValidator,
@@ -39,7 +51,9 @@ type ErrorCode =
   | "DUPLICATE_TOO_FAR"
   | "NOTE_REQUIRED"
   | "LINKED_TASK_NOT_COLLECTED"
-  | "REPORT_PROCESSING_ACTIVE";
+  | "REPORT_PROCESSING_ACTIVE"
+  | "CANDIDATE_REQUIRED"
+  | "CANDIDATE_NO_LONGER_VALID";
 
 function fail(code: ErrorCode, message: string): never {
   throw new ConvexError({ code, message });
@@ -171,19 +185,27 @@ export const getReportDetail = query({
     if (reportId === null) return null;
     const report = await ctx.db.get(reportId);
     if (report === null) return null;
-    const [linkedTask, linkedBin, settings, allReports, allTasks, history] =
-      await Promise.all([
-        report.linkedTaskId === undefined
-          ? null
-          : ctx.db.get(report.linkedTaskId),
-        report.linkedBinId === undefined
-          ? null
-          : ctx.db.get(report.linkedBinId),
-        globalSettings(ctx),
-        ctx.db.query("citizenReports").collect(),
-        ctx.db.query("collectionTasks").collect(),
-        activityHistory(ctx, report._id),
-      ]);
+    const [
+      linkedTask,
+      candidateTask,
+      linkedBin,
+      settings,
+      allReports,
+      allTasks,
+      history,
+    ] = await Promise.all([
+      report.linkedTaskId === undefined
+        ? null
+        : ctx.db.get(report.linkedTaskId),
+      report.candidateTaskId === undefined
+        ? null
+        : ctx.db.get(report.candidateTaskId),
+      report.linkedBinId === undefined ? null : ctx.db.get(report.linkedBinId),
+      globalSettings(ctx),
+      ctx.db.query("citizenReports").collect(),
+      ctx.db.query("collectionTasks").collect(),
+      activityHistory(ctx, report._id),
+    ]);
     const nearbyReports =
       settings === null || !hasValidOperationalCoordinates(report)
         ? []
@@ -297,6 +319,7 @@ export const getReportDetail = query({
         submittedAt: report._creationTime,
         resolvedAt: report.resolvedAt,
         linkedTaskId: report.linkedTaskId,
+        candidateTaskId: report.candidateTaskId,
         linkedBinId: report.linkedBinId,
         classificationConfirmedAt: report.classificationConfirmedAt,
       },
@@ -312,6 +335,27 @@ export const getReportDetail = query({
               displayId: linkedTask.displayId,
               status: linkedTask.status,
               priority: linkedTask.priority,
+            },
+      candidateTask:
+        candidateTask === null || !isActiveTaskStatus(candidateTask.status)
+          ? null
+          : {
+              id: candidateTask._id,
+              displayId: candidateTask.displayId,
+              sourceType: candidateTask.sourceType,
+              priority: candidateTask.priority,
+              status: candidateTask.status,
+              reason: candidateTask.reason,
+              sourceBinId: candidateTask.sourceBinId,
+              sourceReportId: candidateTask.sourceReportId,
+              distanceMeters: hasValidOperationalCoordinates(report)
+                ? haversineDistanceMeters(
+                    report.latitude!,
+                    report.longitude!,
+                    candidateTask.latitude,
+                    candidateTask.longitude,
+                  )
+                : null,
             },
       linkedBin:
         linkedBin === null
@@ -373,6 +417,7 @@ export const confirmClassification = mutation({
       report._id,
       user._id,
     );
+    await evaluateReportForAutomaticTask(ctx, report._id, user._id);
     return { changed: true };
   },
 });
@@ -409,6 +454,7 @@ export const updateClassification = mutation({
       report._id,
       user._id,
     );
+    await evaluateReportForAutomaticTask(ctx, report._id, user._id);
     return { changed: true };
   },
 });
@@ -485,6 +531,7 @@ export const updateResolvedCoordinates = mutation({
         report.status,
         nextStatus,
       );
+    await evaluateReportForAutomaticTask(ctx, report._id, user._id);
     return null;
   },
 });
@@ -550,6 +597,42 @@ export const createCollectionTask = mutation({
         "TASK_ALREADY_LINKED",
         "This report is linked to an active collection task.",
       );
+    const settings = await globalSettings(ctx);
+    if (settings === null)
+      fail("TASK_NOT_FOUND", "Task settings are unavailable.");
+    const nearby = await getNearbyActiveTasks(
+      ctx,
+      report.latitude!,
+      report.longitude!,
+      settings.duplicateDistanceThresholdMeters,
+    );
+    for (const nearbyTask of nearby) {
+      if (
+        !taskCategoriesMatch(
+          report.category,
+          await getTaskOperationalCategory(ctx, nearbyTask.task),
+        )
+      )
+        continue;
+      const now = Date.now();
+      const nextStatus =
+        report.status === "under_review" ? report.status : "under_review";
+      await ctx.db.patch(report._id, {
+        candidateTaskId: nearbyTask.task._id,
+        status: nextStatus,
+        statusUpdatedAt:
+          nextStatus === report.status ? report.statusUpdatedAt : now,
+      });
+      await insertActivityEvent(
+        ctx,
+        "report_task_candidate_found",
+        `Possible task match ${nearbyTask.task.displayId} found for ${report.referenceNumber}; fleet-manager review is required.`,
+        "citizen_report",
+        report._id,
+        user._id,
+      );
+      return { kind: "candidate_found" as const, taskId: nearbyTask.task._id };
+    }
     const now = Date.now();
     const task = await createTaskForReport(ctx, {
       reportId: report._id,
@@ -561,6 +644,7 @@ export const createCollectionTask = mutation({
     });
     await ctx.db.patch(report._id, {
       linkedTaskId: task._id,
+      candidateTaskId: undefined,
       status: "task_created",
       statusUpdatedAt: now,
     });
@@ -590,7 +674,11 @@ export const createCollectionTask = mutation({
       report.status,
       "task_created",
     );
-    return { taskId: task._id, displayId: task.displayId };
+    return {
+      kind: "task_created" as const,
+      taskId: task._id,
+      displayId: task.displayId,
+    };
   },
 });
 
@@ -626,6 +714,7 @@ export const linkExistingTask = mutation({
     const now = Date.now();
     await ctx.db.patch(report._id, {
       linkedTaskId: task._id,
+      candidateTaskId: undefined,
       status: nextStatus,
       statusUpdatedAt:
         nextStatus === report.status ? report.statusUpdatedAt : now,
@@ -650,6 +739,145 @@ export const linkExistingTask = mutation({
         nextStatus,
       );
     return null;
+  },
+});
+
+export const linkCandidateTask = mutation({
+  args: { reportId: v.id("citizenReports") },
+  handler: async (ctx, args) => {
+    const { user } = await requireFleetManager(ctx);
+    const report = await reportOrFail(ctx, args.reportId);
+    requireActionable(report);
+    requireProcessingSettled(report);
+    if (await activeLinkedTask(ctx, report))
+      fail(
+        "TASK_ALREADY_LINKED",
+        "This report is linked to an active collection task.",
+      );
+    const task = await candidateTaskForReport(ctx, report._id);
+    if (task === null)
+      fail(
+        "CANDIDATE_REQUIRED",
+        "There is no active candidate task to review.",
+      );
+    if (!(await candidateStillMatchesReport(ctx, report._id, task._id)))
+      fail(
+        "CANDIDATE_NO_LONGER_VALID",
+        "The candidate task no longer matches this report.",
+      );
+    const nextStatus = reportStatusForTaskStatus(task.status);
+    if (nextStatus === null)
+      fail("TASK_NOT_ACTIVE", "The candidate task is no longer active.");
+    const now = Date.now();
+    await ctx.db.patch(task._id, {
+      linkedReportIds: task.linkedReportIds.includes(report._id)
+        ? task.linkedReportIds
+        : [...task.linkedReportIds, report._id],
+    });
+    await ctx.db.patch(report._id, {
+      linkedTaskId: task._id,
+      candidateTaskId: undefined,
+      status: nextStatus,
+      statusUpdatedAt:
+        nextStatus === report.status ? report.statusUpdatedAt : now,
+    });
+    await insertActivityEvent(
+      ctx,
+      "report_linked_to_task",
+      `${report.referenceNumber} linked to reviewed candidate ${task.displayId}.`,
+      "citizen_report",
+      report._id,
+      user._id,
+    );
+    if (nextStatus !== report.status)
+      await insertActivityEvent(
+        ctx,
+        "report_status_changed",
+        `Report ${report.referenceNumber} status changed from ${report.status} to ${nextStatus}.`,
+        "citizen_report",
+        report._id,
+        user._id,
+        report.status,
+        nextStatus,
+      );
+    return { taskId: task._id };
+  },
+});
+
+export const createSeparateCollectionTask = mutation({
+  args: { reportId: v.id("citizenReports"), reason: v.string() },
+  handler: async (ctx, args) => {
+    const { user } = await requireFleetManager(ctx);
+    const report = await reportOrFail(ctx, args.reportId);
+    requireActionable(report);
+    requireProcessingSettled(report);
+    requireCoordinates(report);
+    if (report.category === undefined || report.priority === undefined)
+      fail(
+        "CLASSIFICATION_UNAVAILABLE",
+        "Set an operational category and priority first.",
+      );
+    const reason = validatedManagerNote(args.reason, true);
+    if (reason === null)
+      fail("NOTE_REQUIRED", "Enter a reason between 3 and 240 characters.");
+    const candidate = await candidateTaskForReport(ctx, report._id);
+    if (candidate === null)
+      fail(
+        "CANDIDATE_REQUIRED",
+        "There is no active candidate task to review.",
+      );
+    if (!(await candidateStillMatchesReport(ctx, report._id, candidate._id)))
+      fail(
+        "CANDIDATE_NO_LONGER_VALID",
+        "The candidate task no longer matches this report.",
+      );
+    if (await activeLinkedTask(ctx, report))
+      fail(
+        "TASK_ALREADY_LINKED",
+        "This report is linked to an active collection task.",
+      );
+    const now = Date.now();
+    const task = await createTaskForReport(ctx, {
+      reportId: report._id,
+      priority: report.priority,
+      reason,
+      latitude: report.latitude!,
+      longitude: report.longitude!,
+      now,
+    });
+    await ctx.db.patch(report._id, {
+      linkedTaskId: task._id,
+      candidateTaskId: undefined,
+      status: "task_created",
+      statusUpdatedAt: now,
+    });
+    await insertActivityEvent(
+      ctx,
+      "task_created",
+      `Separate task ${task.displayId} created for ${report.referenceNumber} after candidate review.`,
+      "collection_task",
+      task._id,
+      user._id,
+    );
+    await insertActivityEvent(
+      ctx,
+      "report_linked_to_task",
+      `${report.referenceNumber} linked to separate task ${task.displayId}.`,
+      "citizen_report",
+      report._id,
+      user._id,
+    );
+    await insertActivityEvent(
+      ctx,
+      "report_status_changed",
+      `Report ${report.referenceNumber} status changed from ${report.status} to task_created.`,
+      "citizen_report",
+      report._id,
+      user._id,
+      report.status,
+      "task_created",
+    );
+    return { taskId: task._id, displayId: task.displayId };
   },
 });
 

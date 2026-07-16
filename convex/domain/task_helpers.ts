@@ -1,14 +1,9 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
-import type { Priority } from "./validators";
+import { haversineDistanceMeters } from "./report_management_rules";
+import { isActiveTaskStatus } from "./task_rules";
+import type { Priority, ReportCategory } from "./validators";
 import { insertActivityEvent } from "./write_helpers";
-
-const activeStatuses = new Set([
-  "pending",
-  "scheduled",
-  "assigned",
-  "en_route",
-]);
 
 export async function getActiveCollectionTask(
   ctx: MutationCtx,
@@ -18,7 +13,56 @@ export async function getActiveCollectionTask(
     .query("collectionTasks")
     .withIndex("by_sourceBinId", (q) => q.eq("sourceBinId", binId))
     .collect();
-  return tasks.find((task) => activeStatuses.has(task.status)) ?? null;
+  return tasks.find((task) => isActiveTaskStatus(task.status)) ?? null;
+}
+
+export async function getNearbyActiveTasks(
+  ctx: MutationCtx,
+  latitude: number,
+  longitude: number,
+  radiusMeters: number,
+) {
+  const taskGroups = await Promise.all(
+    (["pending", "scheduled", "assigned", "en_route"] as const).map((status) =>
+      ctx.db
+        .query("collectionTasks")
+        .withIndex("by_status", (q) => q.eq("status", status))
+        .collect(),
+    ),
+  );
+  return taskGroups
+    .flat()
+    .filter((task) => isActiveTaskStatus(task.status))
+    .map((task) => ({
+      task,
+      distanceMeters: haversineDistanceMeters(
+        latitude,
+        longitude,
+        task.latitude,
+        task.longitude,
+      ),
+    }))
+    .filter((candidate) => candidate.distanceMeters <= radiusMeters)
+    .sort(
+      (a, b) =>
+        a.distanceMeters - b.distanceMeters ||
+        a.task._creationTime - b.task._creationTime,
+    );
+}
+
+export async function getTaskOperationalCategory(
+  ctx: MutationCtx,
+  task: Doc<"collectionTasks">,
+): Promise<ReportCategory | null> {
+  if (task.sourceType === "smart_bin") return "overflowing_waste";
+  const reportIds = [task.sourceReportId, ...task.linkedReportIds].filter(
+    (id): id is Id<"citizenReports"> => id !== undefined,
+  );
+  for (const reportId of reportIds) {
+    const report = await ctx.db.get(reportId);
+    if (report?.category !== undefined) return report.category;
+  }
+  return null;
 }
 
 async function nextDisplayId(ctx: MutationCtx): Promise<string> {

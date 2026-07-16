@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { DataSourceLabel } from "@/components/dashboard/data-source-label";
@@ -61,9 +62,16 @@ export function BinDetailPanel({ detail }: { detail: BinDetail }) {
           </p>
           <p>
             Active task:{" "}
-            {bin.activeTask
-              ? `${bin.activeTask.displayId} (${bin.activeTask.status})`
-              : "None"}
+            {bin.activeTask ? (
+              <Link
+                className="underline"
+                href={`/dashboard/tasks?selected=${bin.activeTask.id}`}
+              >
+                {bin.activeTask.displayId} ({bin.activeTask.status})
+              </Link>
+            ) : (
+              "None"
+            )}
           </p>
         </div>
         <BinActions detail={detail} onShowUnusual={showUnusual} />

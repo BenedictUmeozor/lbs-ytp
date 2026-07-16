@@ -1,28 +1,10 @@
-import type {
-  PublicReportStatus,
-  ReportStatus,
-  TaskStatus,
-} from "./validators";
+import type { PublicReportStatus, ReportStatus } from "./validators";
 
-export const TASK_STATUS_TRANSITIONS: Record<
-  TaskStatus,
-  readonly TaskStatus[]
-> = {
-  pending: ["scheduled", "unable_to_complete", "cancelled"],
-  scheduled: ["assigned", "unable_to_complete", "cancelled"],
-  assigned: ["en_route", "unable_to_complete"],
-  en_route: ["collected", "unable_to_complete"],
-  collected: [],
-  unable_to_complete: [],
-  cancelled: [],
-};
-
-export function canTransitionTaskStatus(
-  currentStatus: TaskStatus,
-  nextStatus: TaskStatus,
-): boolean {
-  return TASK_STATUS_TRANSITIONS[currentStatus].includes(nextStatus);
-}
+export {
+  canTransitionTaskStatus,
+  reportStatusForTaskStatus,
+  TASK_STATUS_TRANSITIONS,
+} from "./task_rules";
 
 export const PUBLIC_REPORT_STATUS_BY_INTERNAL_STATUS: Record<
   ReportStatus,
