@@ -7,6 +7,7 @@ import {
   getBinOperationalRecord,
   getRouteOperationalRecord,
 } from "./domain/read_helpers";
+import { hasOperationalReportLocation } from "./domain/report_rules";
 import {
   binStatusValidator,
   dataSourceValidator,
@@ -248,16 +249,7 @@ async function getMapData(ctx: QueryCtx) {
       activeTaskStatus: activeTask?.status,
     })),
     reports: reportRecords
-      .filter(
-        ({ report }) =>
-          report.latitude !== undefined &&
-          report.longitude !== undefined &&
-          (report.locationResolutionStatus === "provided_coordinates" ||
-            report.locationResolutionStatus === "resolved" ||
-            (report.locationResolutionStatus === undefined &&
-              (report.aiStatus === "completed" ||
-                report.aiStatus === "fallback"))),
-      )
+      .filter(({ report }) => hasOperationalReportLocation(report))
       .map(({ report, task }) => ({
         id: report._id,
         referenceNumber: report.referenceNumber,

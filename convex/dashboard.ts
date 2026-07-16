@@ -6,6 +6,7 @@ import {
   getBinOperationalRecord,
   getRouteOperationalRecord,
 } from "./domain/read_helpers";
+import { hasOperationalReportLocation } from "./domain/report_rules";
 import {
   activityEventTypeValidator,
   binStatusValidator,
@@ -127,10 +128,7 @@ export const getMapData = internalQuery({
       bins: await Promise.all(
         bins.map((bin) => getBinOperationalRecord(ctx, bin)),
       ),
-      reports: reports.filter(
-        (report) =>
-          report.latitude !== undefined && report.longitude !== undefined,
-      ),
+      reports: reports.filter(hasOperationalReportLocation),
       trucks,
       activeRoute:
         route === null ? null : await getRouteOperationalRecord(ctx, route),
@@ -145,12 +143,6 @@ async function getActiveRouteRecord(
   route: MapRecords["route"],
 ): Promise<ActiveRouteRecord | null> {
   return route === null ? null : getRouteOperationalRecord(ctx, route);
-}
-
-function hasCoordinates<T extends { latitude?: number; longitude?: number }>(
-  item: T,
-): item is T & { latitude: number; longitude: number } {
-  return item.latitude !== undefined && item.longitude !== undefined;
 }
 
 const overviewMapValidator = v.object({
@@ -237,7 +229,7 @@ function buildOverviewMap(
       status: bin.status,
       source: bin.source,
     })),
-    reports: reports.filter(hasCoordinates).map((report) => ({
+    reports: reports.filter(hasOperationalReportLocation).map((report) => ({
       id: report._id,
       referenceNumber: report.referenceNumber,
       latitude: report.latitude,

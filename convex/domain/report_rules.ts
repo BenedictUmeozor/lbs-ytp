@@ -1,3 +1,23 @@
+import type { AiStatus, LocationResolutionStatus } from "./validators";
+
+export function hasOperationalReportLocation<
+  T extends {
+    latitude?: number;
+    longitude?: number;
+    locationResolutionStatus?: LocationResolutionStatus;
+    aiStatus: AiStatus;
+  },
+>(report: T): report is T & { latitude: number; longitude: number } {
+  return (
+    report.latitude !== undefined &&
+    report.longitude !== undefined &&
+    (report.locationResolutionStatus === "provided_coordinates" ||
+      report.locationResolutionStatus === "resolved" ||
+      (report.locationResolutionStatus === undefined &&
+        (report.aiStatus === "completed" || report.aiStatus === "fallback")))
+  );
+}
+
 export const ACCEPTED_REPORT_PHOTO_TYPES = [
   "image/jpeg",
   "image/png",

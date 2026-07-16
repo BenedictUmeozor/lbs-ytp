@@ -66,9 +66,15 @@ function sleep(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+function getGeminiErrorStatus(error: unknown): number | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const candidate = error as { statusCode?: unknown; status?: unknown };
+  if (typeof candidate.statusCode === "number") return candidate.statusCode;
+  return typeof candidate.status === "number" ? candidate.status : undefined;
+}
+
 function isTemporaryGeminiError(error: unknown): boolean {
-  if (!(error instanceof Error)) return true;
-  const status = (error as Error & { status?: number }).status;
+  const status = getGeminiErrorStatus(error);
   return (
     status === undefined || status === 408 || status === 429 || status >= 500
   );
@@ -104,7 +110,10 @@ async function getGeminiTriage(input: {
             schema: responseSchema,
           },
         },
-        { timeout: GEMINI_TIMEOUT_MS },
+        {
+          timeout_ms: GEMINI_TIMEOUT_MS,
+          retries: { strategy: "none" },
+        },
       );
       if (
         interaction.output_text !== undefined &&
