@@ -4,9 +4,10 @@ import { GoogleGenAI } from "@google/genai";
 import { v } from "convex/values";
 
 import { internal } from "./_generated/api";
-import { internalAction } from "./_generated/server";
+import { internalAction, type ActionCtx } from "./_generated/server";
 import {
   getAcceptableNominatimResult,
+  isCoordinateInsideBarigaPilot,
   isObviouslyVagueLandmark,
   normalizeLandmarkQuery,
   redactContactDetails,
@@ -20,6 +21,16 @@ import {
 
 const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const MAX_THROTTLE_WAIT_MS = 30_000;
+const NOMINATIM_TIMEOUT_MS = 8_000;
+const GEMINI_TIMEOUT_MS = 15_000;
+
+type ProcessingLocationResult = {
+  status:
+    "provided_coordinates" | "resolved" | "needs_clarification" | "failed";
+  latitude?: number;
+  longitude?: number;
+  resolvedLocationName?: string;
+};
 
 const responseSchema = {
   type: "object",
@@ -83,18 +94,23 @@ async function getGeminiTriage(input: {
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      const interaction = await ai.interactions.create({
-        model: GEMINI_MODEL,
-        input: prompt,
-        response_format: {
-          type: "text",
-          mime_type: "application/json",
-          schema: responseSchema,
+      const interaction = await ai.interactions.create(
+        {
+          model: GEMINI_MODEL,
+          input: prompt,
+          response_format: {
+            type: "text",
+            mime_type: "application/json",
+            schema: responseSchema,
+          },
         },
-      });
-      const text = interaction.output_text;
-      if (text !== undefined && text.length > 0) {
-        const parsed: unknown = JSON.parse(text);
+        { timeout: GEMINI_TIMEOUT_MS },
+      );
+      if (
+        interaction.output_text !== undefined &&
+        interaction.output_text.length > 0
+      ) {
+        const parsed: unknown = JSON.parse(interaction.output_text);
         if (isValidGeminiTriageResult(parsed))
           return trimGeminiTriageResult(parsed);
       }
@@ -104,6 +120,144 @@ async function getGeminiTriage(input: {
     if (attempt === 0) await sleep(500);
   }
   return null;
+}
+
+async function resolveLocation(
+  ctx: ActionCtx,
+  report: {
+    landmarkText?: string;
+    latitude?: number;
+    longitude?: number;
+  },
+  sanitizedLandmark: string | undefined,
+): Promise<ProcessingLocationResult> {
+  if (report.latitude !== undefined && report.longitude !== undefined) {
+    if (
+      Number.isFinite(report.latitude) &&
+      Number.isFinite(report.longitude) &&
+      report.latitude >= -90 &&
+      report.latitude <= 90 &&
+      report.longitude >= -180 &&
+      report.longitude <= 180 &&
+      isCoordinateInsideBarigaPilot(report.latitude, report.longitude)
+    ) {
+      return {
+        status: "provided_coordinates",
+        latitude: report.latitude,
+        longitude: report.longitude,
+      };
+    }
+    return { status: "needs_clarification" };
+  }
+  if (
+    sanitizedLandmark === undefined ||
+    isObviouslyVagueLandmark(sanitizedLandmark)
+  ) {
+    return { status: "needs_clarification" };
+  }
+
+  try {
+    const normalizedQuery = normalizeLandmarkQuery(sanitizedLandmark);
+    let cached = await ctx.runQuery(
+      internal.reportProcessingData.getCachedGeocode,
+      { normalizedQuery },
+    );
+    if (cached !== null) {
+      await ctx.runMutation(internal.reportProcessingData.touchCachedGeocode, {
+        normalizedQuery,
+      });
+    } else {
+      const reservedAt = await ctx.runMutation(
+        internal.reportProcessingData.reserveNominatimRequestSlot,
+        {},
+      );
+      const wait = reservedAt - Date.now();
+      if (wait > MAX_THROTTLE_WAIT_MS) return { status: "failed" };
+      if (wait > 0) await sleep(wait);
+      cached = await ctx.runQuery(
+        internal.reportProcessingData.getCachedGeocode,
+        { normalizedQuery },
+      );
+      if (cached === null) {
+        const baseUrl = (
+          process.env.NOMINATIM_BASE_URL ||
+          "https://nominatim.openstreetmap.org"
+        ).replace(/\/$/, "");
+        const url = new URL(`${baseUrl}/search`);
+        url.search = new URLSearchParams({
+          q: `${sanitizedLandmark}, Bariga, Lagos, Nigeria`,
+          format: "jsonv2",
+          limit: "3",
+          countrycodes: "ng",
+          addressdetails: "1",
+          bounded: "1",
+          viewbox: "3.35,6.57,3.43,6.50",
+        }).toString();
+        const controller = new AbortController();
+        const timeout = setTimeout(
+          () => controller.abort(),
+          NOMINATIM_TIMEOUT_MS,
+        );
+        let response: Response;
+        try {
+          response = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+              "User-Agent": "BarigaSmartWasteMVP/0.1",
+              Accept: "application/json",
+              "Accept-Language": "en",
+            },
+          });
+        } catch {
+          return { status: "failed" };
+        } finally {
+          clearTimeout(timeout);
+        }
+        if (!response.ok) return { status: "failed" };
+        let payload: unknown;
+        try {
+          payload = await response.json();
+        } catch {
+          return { status: "failed" };
+        }
+        if (!Array.isArray(payload)) return { status: "failed" };
+        const result = payload
+          .map(getAcceptableNominatimResult)
+          .find((candidate) => candidate !== null);
+        if (result === undefined) {
+          await ctx.runMutation(
+            internal.reportProcessingData.storeGeocodingCacheResult,
+            {
+              normalizedQuery,
+              submittedQuery: sanitizedLandmark,
+              result: { found: false },
+            },
+          );
+          cached = { found: false };
+        } else {
+          await ctx.runMutation(
+            internal.reportProcessingData.storeGeocodingCacheResult,
+            {
+              normalizedQuery,
+              submittedQuery: sanitizedLandmark,
+              result: { found: true, ...result },
+            },
+          );
+          cached = { found: true, ...result };
+        }
+      }
+    }
+    return cached?.found
+      ? {
+          status: "resolved",
+          latitude: cached.latitude,
+          longitude: cached.longitude,
+          resolvedLocationName: cached.displayName,
+        }
+      : { status: "needs_clarification" };
+  } catch {
+    return { status: "failed" };
+  }
 }
 
 export const processReport = internalAction({
@@ -120,162 +274,35 @@ export const processReport = internalAction({
       report.landmarkText === undefined
         ? undefined
         : redactContactDetails(report.landmarkText.trim());
-    let locationResolutionStatus:
-      "provided_coordinates" | "resolved" | "needs_clarification" | "failed" =
-      "failed";
-    let latitude = report.latitude;
-    let longitude = report.longitude;
-    let resolvedLocationName: string | undefined;
+    const location = await resolveLocation(ctx, report, sanitizedLandmark);
+    const locationResolved =
+      location.status === "provided_coordinates" ||
+      location.status === "resolved";
+    const geminiResult = await getGeminiTriage({
+      description: sanitizedDescription,
+      category: report.category,
+      landmark: sanitizedLandmark,
+      hasCoordinates: location.status === "provided_coordinates",
+    });
+    const triage =
+      geminiResult ??
+      classifyReportWithRules({
+        description: sanitizedDescription,
+        residentCategory: report.category,
+        locationResolved,
+        landmark: sanitizedLandmark,
+      });
 
     try {
-      if (
-        latitude !== undefined &&
-        longitude !== undefined &&
-        Number.isFinite(latitude) &&
-        Number.isFinite(longitude) &&
-        latitude >= -90 &&
-        latitude <= 90 &&
-        longitude >= -180 &&
-        longitude <= 180
-      ) {
-        locationResolutionStatus = "provided_coordinates";
-      } else if (
-        sanitizedLandmark === undefined ||
-        isObviouslyVagueLandmark(sanitizedLandmark)
-      ) {
-        locationResolutionStatus = "needs_clarification";
-        latitude = undefined;
-        longitude = undefined;
-      } else {
-        const normalizedQuery = normalizeLandmarkQuery(sanitizedLandmark);
-        let cached = await ctx.runQuery(
-          internal.reportProcessingData.getCachedGeocode,
-          { normalizedQuery },
-        );
-        if (cached !== null) {
-          await ctx.runMutation(
-            internal.reportProcessingData.touchCachedGeocode,
-            { normalizedQuery },
-          );
-        } else {
-          const reservedAt = await ctx.runMutation(
-            internal.reportProcessingData.reserveNominatimRequestSlot,
-            {},
-          );
-          const wait = reservedAt - Date.now();
-          if (wait > MAX_THROTTLE_WAIT_MS) {
-            locationResolutionStatus = "failed";
-          } else {
-            if (wait > 0) await sleep(wait);
-            cached = await ctx.runQuery(
-              internal.reportProcessingData.getCachedGeocode,
-              { normalizedQuery },
-            );
-            if (cached === null) {
-              const baseUrl = (
-                process.env.NOMINATIM_BASE_URL ||
-                "https://nominatim.openstreetmap.org"
-              ).replace(/\/$/, "");
-              const url = new URL(`${baseUrl}/search`);
-              url.search = new URLSearchParams({
-                q: `${sanitizedLandmark}, Bariga, Lagos, Nigeria`,
-                format: "jsonv2",
-                limit: "1",
-                countrycodes: "ng",
-                addressdetails: "1",
-                bounded: "1",
-                viewbox: "3.35,6.57,3.43,6.50",
-              }).toString();
-              const response = await fetch(url, {
-                headers: {
-                  "User-Agent": "BarigaSmartWasteMVP/0.1",
-                  Accept: "application/json",
-                  "Accept-Language": "en",
-                },
-              });
-              if (response.status === 429 || response.status >= 500) {
-                locationResolutionStatus = "failed";
-              } else if (!response.ok) {
-                locationResolutionStatus = "failed";
-              } else {
-                const payload: unknown = await response.json();
-                if (!Array.isArray(payload)) {
-                  locationResolutionStatus = "failed";
-                } else if (payload.length === 0) {
-                  await ctx.runMutation(
-                    internal.reportProcessingData.storeGeocodingCacheResult,
-                    {
-                      normalizedQuery,
-                      submittedQuery: sanitizedLandmark,
-                      result: { found: false },
-                    },
-                  );
-                  cached = { found: false };
-                } else {
-                  const result = getAcceptableNominatimResult(payload[0]);
-                  if (result === null) {
-                    locationResolutionStatus = "needs_clarification";
-                  } else {
-                    await ctx.runMutation(
-                      internal.reportProcessingData.storeGeocodingCacheResult,
-                      {
-                        normalizedQuery,
-                        submittedQuery: sanitizedLandmark,
-                        result: { found: true, ...result },
-                      },
-                    );
-                    cached = { found: true, ...result };
-                  }
-                }
-              }
-            }
-          }
-        }
-        if (cached?.found) {
-          locationResolutionStatus = "resolved";
-          latitude = cached.latitude;
-          longitude = cached.longitude;
-          resolvedLocationName = cached.displayName;
-        } else if (cached?.found === false) {
-          locationResolutionStatus = "needs_clarification";
-          latitude = undefined;
-          longitude = undefined;
-        }
-      }
-
-      const locationResolved =
-        locationResolutionStatus === "provided_coordinates" ||
-        locationResolutionStatus === "resolved";
-      const geminiResult = await getGeminiTriage({
-        description: sanitizedDescription,
-        category: report.category,
-        landmark: sanitizedLandmark,
-        hasCoordinates: locationResolutionStatus === "provided_coordinates",
-      });
-      const triage =
-        geminiResult ??
-        classifyReportWithRules({
-          description: sanitizedDescription,
-          residentCategory: report.category,
-          locationResolved,
-          landmark: sanitizedLandmark,
-        });
       await ctx.runMutation(
         internal.reportProcessingData.applyReportProcessingResult,
         {
           reportId: args.reportId,
-          locationResolutionStatus,
-          latitude:
-            locationResolutionStatus === "provided_coordinates" ||
-            locationResolutionStatus === "resolved"
-              ? latitude
-              : undefined,
-          longitude:
-            locationResolutionStatus === "provided_coordinates" ||
-            locationResolutionStatus === "resolved"
-              ? longitude
-              : undefined,
-          resolvedLocationName,
+          attempt: report.attempt,
+          locationResolutionStatus: location.status,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          resolvedLocationName: location.resolvedLocationName,
           category: triage.category,
           priority: triage.priority,
           summary: triage.summary,
@@ -288,34 +315,13 @@ export const processReport = internalAction({
         },
       );
     } catch {
-      try {
-        const fallback = classifyReportWithRules({
-          description: sanitizedDescription,
-          residentCategory: report.category,
-          locationResolved: false,
-          landmark: sanitizedLandmark,
-        });
-        await ctx.runMutation(
-          internal.reportProcessingData.applyReportProcessingResult,
-          {
-            reportId: args.reportId,
-            locationResolutionStatus: "failed",
-            category: fallback.category,
-            priority: fallback.priority,
-            summary: fallback.summary,
-            aiExtractedLocationText: fallback.locationText,
-            requiresCollection: fallback.requiresCollection,
-            aiNeedsClarification: true,
-            aiSource: "fallback",
-            processedAt: Date.now(),
-          },
-        );
-      } catch {
-        await ctx.runMutation(
-          internal.reportProcessingData.markReportProcessingFailed,
-          args,
-        );
-      }
+      await ctx.runMutation(
+        internal.reportProcessingData.markReportProcessingFailed,
+        {
+          reportId: args.reportId,
+          attempt: report.attempt,
+        },
+      );
     }
   },
 });

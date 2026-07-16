@@ -897,7 +897,7 @@ Residents do not require authentication. Phase 5 stores the original report, bro
 
 ### Phase 6 processing boundary
 
-Processing starts asynchronously only after a report is stored. Browser coordinates take priority and are never reverse geocoded. Typed landmarks use cached, throttled Nominatim searches; an AI-extracted location never overrides a vague explicit location. Gemini 3.1 Flash-Lite performs validated structured triage, with deterministic local rules when Gemini is unavailable. Phase 6 creates no collection task: Phase 8 owns automatic task creation, and Phase 7 fleet managers can edit AI output. Public tracking never exposes internal AI, model, priority, resolution, or location details.
+Processing starts asynchronously only after a report is stored. Browser coordinates take priority, must be within the Bariga pilot, and are never reverse geocoded. Typed landmarks use cached, throttled Nominatim searches with an eight-second timeout; definitive no-result and unusable-result responses are cached. An AI-extracted location never overrides a vague explicit location. Gemini 3.1 Flash-Lite performs validated structured triage with a fifteen-second timeout per attempt, with deterministic local rules when Gemini is unavailable. Attempt-versioned processing has scheduled stale-action recovery and at most three total attempts, so stale actions cannot apply results. Successful location resolution survives AI fallback. Phase 6 creates no collection task: Phase 8 owns automatic task creation, and Phase 7 fleet managers can edit AI output. Public tracking never exposes internal AI, model, priority, resolution, or location details.
 
 ### Optional report photos
 

@@ -14,6 +14,7 @@ import {
   reportCategoryValidator,
 } from "./domain/validators";
 import { insertActivityEvent } from "./domain/write_helpers";
+import { PROCESSING_RECOVERY_DELAY_MS } from "./reportProcessingData";
 
 export const list = internalQuery({
   args: {},
@@ -212,6 +213,11 @@ export const submitWebReport = mutation({
     await ctx.scheduler.runAfter(0, internal.reportProcessing.processReport, {
       reportId,
     });
+    await ctx.scheduler.runAfter(
+      PROCESSING_RECOVERY_DELAY_MS,
+      internal.reportProcessingData.recoverReportProcessing,
+      { reportId },
+    );
 
     return {
       referenceNumber,

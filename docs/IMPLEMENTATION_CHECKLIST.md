@@ -149,7 +149,7 @@ Update this table after completing each phase.
 | Phase 3  | Complete | 2026-07-15 | Dedicated protected map query with live Convex subscriptions, an interactive Leaflet map, bins/reports/trucks/depot/route layers, filters and search, live selected-item details, a keyboard-accessible operational list, and read-only active-route rendering. Route re-optimisation remains Phase 9; stop completion remains Phase 10. |
 | Phase 4  | Complete | 2026-07-15 | Smart Bins provides a protected live list/detail view, public controlled-MVP hardware ingestion with payload and assignment validation, automatic task rules, real-device offline evaluation, and auditable manual/sensor emptying confirmation. The correction pass preserves awaiting-confirmation state, restores connectivity for delayed readings, rejects conflicting duplicates, safely handles invalid selected-bin URLs, fixes authentication-state ordering, and records sensor-confirmed status history. The final correction resets bin-specific UI state when selection changes, uses structured Convex application errors for hardware-domain failures, and corrects the real-device payload example. The awaiting-confirmation helper is ready, but its invocation from the later Collection Tasks “mark task collected” mutation remains deferred. |
 | Phase 5  | Complete | 2026-07-16 | Public unauthenticated reporting stores the resident-selected category, original message, browser coordinates or typed landmark, optional private Convex File Storage photo ID, and a sequential report reference. Submitted and tracking views use public-safe real-time status subscriptions; raw landmarks and coordinates are excluded from public tracking. Structured field-level Convex application errors, safe unexpected-error messaging, a public route error boundary and accessible location/form corrections are complete. New reports remain `status: new` and `aiStatus: pending`; Phase 6 owns Nominatim resolution and Gemini triage. D-04 remains unresolved. |
-| Phase 6  | Complete | 2026-07-16 | Asynchronous report processing now claims new reports after storage, bypasses Nominatim for browser coordinates, and resolves clear typed landmarks through a cached, cross-action-throttled Nominatim search. Vague, unresolved, and temporarily failed locations require clarification without invented coordinates. Server-only Gemini 3.1 Flash-Lite structured triage is runtime validated with a deterministic fallback. Internal results safely update existing public subscriptions, while public tracking remains private-data free. No collection tasks, duplicate detection, dashboard, or messaging were added. Demo reset clears geocoding cache and throttle state. |
+| Phase 6  | Complete | 2026-07-16 | Asynchronous processing now has monotonic attempt versions, stale-result guards, six-minute recovery checks, and a three-attempt limit. Nominatim has an eight-second timeout, caches definitive unusable results, and accepts only in-pilot locations; Gemini has a fifteen-second timeout per attempt and falls back without erasing successful location resolution. Outside-pilot browser GPS requires clarification and unresolved reports are excluded from operational map markers while completed/fallback legacy seeded markers remain visible. No collection tasks, duplicate detection, dashboard, or messaging were added. |
 | Phase 7  | Pending | —               | —               |
 | Phase 8  | Pending | —               | —               |
 | Phase 9  | Pending | —               | —               |
@@ -995,18 +995,55 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 # Phase 6 — Location Resolution and AI-Assisted Triage
 
-* [x] Decision D-04 is approved and documented.
-* [x] Process reports asynchronously after storage without delaying submission.
-* [x] Keep browser coordinates private and never reverse geocode them.
-* [x] Resolve clear typed landmarks through cached, throttled Nominatim requests with attribution.
-* [x] Reject vague landmarks and preserve reports without inventing locations.
-* [x] Use server-only, contact-redacted Gemini structured output with runtime validation and two-attempt maximum.
-* [x] Apply conservative deterministic fallback classification when Gemini is unavailable.
-* [x] Preserve original messages and public-safe tracking while updating report status reactively.
-* [x] Do not create collection tasks, duplicate candidates, dashboard UI, or WhatsApp reports.
-* [x] Clear geocoding cache and throttle records on demo reset.
+## Decision D-04
+
+* [x] Gemini model, server-side environment variable, structured schema, retries, and fallback are approved in D-04.
+
+## Location priority
+
+* [x] Browser GPS is preferred, validated against the Bariga pilot, and never reverse geocoded.
+* [x] Clear typed landmarks use Nominatim; vague locations require clarification without invented coordinates.
+
+## Nominatim geocoding
+
+* [x] Searches use Lagos/Nigeria context, a clear User-Agent, cache, cross-action throttling, and OpenStreetMap attribution.
+* [x] Original landmarks remain stored separately from resolved coordinates and display names.
+* [x] Empty and definitive unusable results are cached; temporary provider failures are not.
+
+## Vague and failed locations
+
+* [x] Bariga, Lagos, around my area, near the road, and bus stop alone are rejected deterministically.
+* [x] Failed and outside-pilot locations require clarification while preserving submitted location data.
+
+## Gemini triage
+
+* [x] Server-only Gemini receives contact-redacted, minimal report input and validated structured output.
+* [x] All supported categories and priorities are stored as operational recommendations without replacing the original message.
+
+## Rules fallback and AI guardrails
+
+* [x] Deterministic category, priority, collection, and clarification rules apply after Gemini failure.
+* [x] AI does not approve vague locations, create tasks, merge reports, or expose internal details publicly.
+
+## Recovery and stale-attempt safety
+
+* [x] Processing attempts are versioned.
+* [x] Stale actions cannot overwrite newer results.
+* [x] Interrupted processing receives scheduled recovery.
+* [x] Processing stops after three attempts.
+* [x] Nominatim requests have an eight-second timeout.
+* [x] Gemini requests have a fifteen-second timeout per attempt.
+* [x] AI failure preserves successful location resolution.
+* [x] Outside-pilot GPS requires clarification.
+* [x] Operational maps exclude unresolved reports while keeping valid legacy seeded markers.
+* [x] Definitive unusable geocoding results are cached.
+
+## Phase acceptance criteria
+
+* [x] New reports are processed asynchronously with public-safe real-time status updates.
+* [x] No collection task is created, and reset clears geocoding cache and throttle records.
 * [x] Targeted code generation and lint checks pass.
-* [x] The Phase 6 handoff summary is recorded.
+* [x] The corrected Phase 6 handoff summary is recorded.
 
 ---
 

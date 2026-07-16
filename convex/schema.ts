@@ -88,6 +88,7 @@ export default defineSchema({
     aiExtractedLocationText: v.optional(v.string()),
     aiModel: v.optional(v.string()),
     aiProcessingStartedAt: v.optional(v.number()),
+    aiProcessingAttempt: v.optional(v.number()),
     aiProcessedAt: v.optional(v.number()),
     latitude: v.optional(v.number()),
     longitude: v.optional(v.number()),

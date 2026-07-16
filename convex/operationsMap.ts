@@ -250,7 +250,13 @@ async function getMapData(ctx: QueryCtx) {
     reports: reportRecords
       .filter(
         ({ report }) =>
-          report.latitude !== undefined && report.longitude !== undefined,
+          report.latitude !== undefined &&
+          report.longitude !== undefined &&
+          (report.locationResolutionStatus === "provided_coordinates" ||
+            report.locationResolutionStatus === "resolved" ||
+            (report.locationResolutionStatus === undefined &&
+              (report.aiStatus === "completed" ||
+                report.aiStatus === "fallback"))),
       )
       .map(({ report, task }) => ({
         id: report._id,

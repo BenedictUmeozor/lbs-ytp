@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 
+import { internal } from "./_generated/api";
 import { internalMutation, internalQuery } from "./_generated/server";
 import {
   locationResolutionStatusValidator,
@@ -7,6 +8,10 @@ import {
   reportCategoryValidator,
 } from "./domain/validators";
 import { insertActivityEvent } from "./domain/write_helpers";
+
+export const PROCESSING_STALE_AFTER_MS = 5 * 60 * 1000;
+export const PROCESSING_RECOVERY_DELAY_MS = 6 * 60 * 1000;
+export const MAX_PROCESSING_ATTEMPTS = 3;
 
 const cacheResultValidator = v.union(
   v.object({
@@ -22,6 +27,7 @@ export const claimReportForProcessing = internalMutation({
   args: { reportId: v.id("citizenReports") },
   returns: v.union(
     v.object({
+      attempt: v.number(),
       originalMessage: v.string(),
       category: reportCategoryValidator,
       landmarkText: v.optional(v.string()),
@@ -32,30 +38,78 @@ export const claimReportForProcessing = internalMutation({
   ),
   handler: async (ctx, args) => {
     const report = await ctx.db.get(args.reportId);
+    if (report === null || report.category === undefined) return null;
+    if (report.aiStatus === "completed" || report.aiStatus === "fallback")
+      return null;
     if (
-      report === null ||
-      report.category === undefined ||
-      report.aiStatus === "completed" ||
-      report.aiStatus === "fallback" ||
-      (report.aiStatus === "processing" &&
-        (report.aiProcessingStartedAt === undefined ||
-          report.aiProcessingStartedAt > Date.now() - 5 * 60 * 1000))
+      report.aiStatus === "processing" &&
+      report.aiProcessingStartedAt !== undefined &&
+      report.aiProcessingStartedAt > Date.now() - PROCESSING_STALE_AFTER_MS
     ) {
       return null;
     }
+    const attempt = (report.aiProcessingAttempt ?? 0) + 1;
+    if (attempt > MAX_PROCESSING_ATTEMPTS) return null;
 
     await ctx.db.patch(args.reportId, {
       aiStatus: "processing",
+      aiProcessingAttempt: attempt,
       aiProcessingStartedAt: Date.now(),
       locationResolutionStatus: report.locationResolutionStatus ?? "pending",
     });
     return {
+      attempt,
       originalMessage: report.originalMessage,
       category: report.category,
       landmarkText: report.landmarkText,
       latitude: report.latitude,
       longitude: report.longitude,
     };
+  },
+});
+
+export const recoverReportProcessing = internalMutation({
+  args: { reportId: v.id("citizenReports") },
+  handler: async (ctx, args) => {
+    const report = await ctx.db.get(args.reportId);
+    if (
+      report === null ||
+      report.aiStatus === "completed" ||
+      report.aiStatus === "fallback"
+    ) {
+      return;
+    }
+    const attempts = report.aiProcessingAttempt ?? 0;
+    const isRecentProcessing =
+      report.aiStatus === "processing" &&
+      report.aiProcessingStartedAt !== undefined &&
+      report.aiProcessingStartedAt > Date.now() - PROCESSING_STALE_AFTER_MS;
+    if (isRecentProcessing) {
+      await ctx.scheduler.runAfter(
+        PROCESSING_RECOVERY_DELAY_MS,
+        internal.reportProcessingData.recoverReportProcessing,
+        args,
+      );
+      return;
+    }
+    if (attempts >= MAX_PROCESSING_ATTEMPTS) {
+      await ctx.db.patch(args.reportId, {
+        aiStatus: "failed",
+        aiProcessingStartedAt: undefined,
+        aiProcessedAt: Date.now(),
+      });
+      return;
+    }
+    await ctx.scheduler.runAfter(
+      0,
+      internal.reportProcessing.processReport,
+      args,
+    );
+    await ctx.scheduler.runAfter(
+      PROCESSING_RECOVERY_DELAY_MS,
+      internal.reportProcessingData.recoverReportProcessing,
+      args,
+    );
   },
 });
 
@@ -148,6 +202,7 @@ export const storeGeocodingCacheResult = internalMutation({
 export const applyReportProcessingResult = internalMutation({
   args: {
     reportId: v.id("citizenReports"),
+    attempt: v.number(),
     locationResolutionStatus: locationResolutionStatusValidator,
     latitude: v.optional(v.number()),
     longitude: v.optional(v.number()),
@@ -162,9 +217,16 @@ export const applyReportProcessingResult = internalMutation({
     aiModel: v.optional(v.string()),
     processedAt: v.number(),
   },
+  returns: v.boolean(),
   handler: async (ctx, args) => {
     const report = await ctx.db.get(args.reportId);
-    if (report === null) return;
+    if (
+      report === null ||
+      report.aiStatus !== "processing" ||
+      report.aiProcessingAttempt !== args.attempt
+    ) {
+      return false;
+    }
     const needsClarification =
       args.locationResolutionStatus === "needs_clarification" ||
       args.locationResolutionStatus === "failed" ||
@@ -172,11 +234,18 @@ export const applyReportProcessingResult = internalMutation({
     const nextStatus = needsClarification
       ? "needs_clarification"
       : "under_review";
+    const locationPatch =
+      args.locationResolutionStatus === "provided_coordinates" ||
+      args.locationResolutionStatus === "resolved"
+        ? {
+            latitude: args.latitude,
+            longitude: args.longitude,
+            resolvedLocationName: args.resolvedLocationName,
+          }
+        : {};
     await ctx.db.patch(args.reportId, {
+      ...locationPatch,
       locationResolutionStatus: args.locationResolutionStatus,
-      latitude: args.latitude,
-      longitude: args.longitude,
-      resolvedLocationName: args.resolvedLocationName,
       category: args.category,
       priority: args.priority,
       summary: args.summary,
@@ -212,19 +281,27 @@ export const applyReportProcessingResult = internalMutation({
         nextStatus,
       );
     }
+    return true;
   },
 });
 
 export const markReportProcessingFailed = internalMutation({
-  args: { reportId: v.id("citizenReports") },
+  args: { reportId: v.id("citizenReports"), attempt: v.number() },
+  returns: v.boolean(),
   handler: async (ctx, args) => {
     const report = await ctx.db.get(args.reportId);
-    if (report !== null) {
-      await ctx.db.patch(args.reportId, {
-        aiStatus: "failed",
-        aiProcessedAt: Date.now(),
-        aiProcessingStartedAt: undefined,
-      });
+    if (
+      report === null ||
+      report.aiStatus !== "processing" ||
+      report.aiProcessingAttempt !== args.attempt
+    ) {
+      return false;
     }
+    await ctx.db.patch(args.reportId, {
+      aiStatus: "failed",
+      aiProcessedAt: Date.now(),
+      aiProcessingStartedAt: undefined,
+    });
+    return true;
   },
 });

@@ -16,6 +16,12 @@ const VAGUE_LANDMARKS = new Set([
   "here",
   "this place",
   "nearby",
+  "bus stop",
+  "near bus stop",
+  "the bus stop",
+  "main road",
+  "near the market",
+  "the market",
 ]);
 
 const GENERIC_ONE_WORD_LOCATIONS = new Set([
@@ -25,7 +31,6 @@ const GENERIC_ONE_WORD_LOCATIONS = new Set([
   "junction",
   "market",
   "busstop",
-  "bus stop",
   "compound",
   "house",
   "school",
