@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 5
-* **Current milestone:** Public Web Reporting and Report Tracking
+* **Current phase:** Phase 6
+* **Current milestone:** Location Resolution and AI-Assisted Triage
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -102,11 +102,12 @@ The coding agent must not resolve these decisions independently.
 
 ### D-02 — Report photo storage
 
-* [ ] Choose where public and WhatsApp report photos will be stored.
-* [ ] Confirm how private photo access will be enforced.
-* [ ] Confirm the accepted image types and size limit.
+* [x] Store public-report photos in Convex File Storage.
+* [x] Store an application-private Convex storage ID only; public queries return no photo data.
+* [x] Accept JPEG, PNG and WebP only, with a 5 MiB maximum.
+* [x] Accept a public generated upload URL for unauthenticated residents in the controlled MVP.
 * **Required before:** Phase 5
-* **Status:** Pending owner decision
+* **Status:** Approved — [D-02](decisions/D-02_REPORT_PHOTO_STORAGE.md).
 
 ### D-03 — Device-offline evaluation
 
@@ -146,8 +147,8 @@ Update this table after completing each phase.
 | Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains one fleet-manager user, 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 16 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
 | Phase 2  | Complete | 2026-07-15 | Phase 2A implemented the Clerk and Convex authentication foundation: restricted manual demo-account flow, normalized Convex fleet-manager authorization, protected `/dashboard` routes, sign-in/sign-out, and a safe current-user query. Phase 2B built the persistent dashboard shell, reusable dashboard UI primitives, one authenticated real-time `dashboard.getOverviewData` query protected by `requireFleetManager()`, the complete Overview page with a non-interactive OpenStreetMap/Leaflet preview, and protected placeholder pages for every later dashboard section. The correction pass improved authentication failure handling, generic runtime errors, empty states and shared map data loading. Phase 3 should extend the reusable Leaflet map foundation into the full interactive operations map. |
 | Phase 3  | Complete | 2026-07-15 | Dedicated protected map query with live Convex subscriptions, an interactive Leaflet map, bins/reports/trucks/depot/route layers, filters and search, live selected-item details, a keyboard-accessible operational list, and read-only active-route rendering. Route re-optimisation remains Phase 9; stop completion remains Phase 10. |
-| Phase 4  | Complete | 2026-07-15 | Smart Bins provides a protected live list/detail view, public controlled-MVP hardware ingestion with payload and assignment validation, automatic task rules, real-device offline evaluation, and auditable manual/sensor emptying confirmation. The correction pass preserves awaiting-confirmation state, restores connectivity for delayed readings, rejects conflicting duplicates, safely handles invalid selected-bin URLs, fixes authentication-state ordering, and records sensor-confirmed status history. The final correction resets bin-specific UI state when selection changes, uses structured Convex application errors for hardware-domain failures, and corrects the real-device payload example. The awaiting-confirmation helper is ready, but its invocation from the later Collection Tasks “mark task collected” mutation remains deferred. Phase 5 remains blocked by unresolved D-02 photo storage. |
-| Phase 5  | Pending | —               | —               |
+| Phase 4  | Complete | 2026-07-15 | Smart Bins provides a protected live list/detail view, public controlled-MVP hardware ingestion with payload and assignment validation, automatic task rules, real-device offline evaluation, and auditable manual/sensor emptying confirmation. The correction pass preserves awaiting-confirmation state, restores connectivity for delayed readings, rejects conflicting duplicates, safely handles invalid selected-bin URLs, fixes authentication-state ordering, and records sensor-confirmed status history. The final correction resets bin-specific UI state when selection changes, uses structured Convex application errors for hardware-domain failures, and corrects the real-device payload example. The awaiting-confirmation helper is ready, but its invocation from the later Collection Tasks “mark task collected” mutation remains deferred. |
+| Phase 5  | Complete | 2026-07-16 | Public unauthenticated reporting now stores the resident-selected category, original message, browser coordinates or typed landmark, optional private Convex File Storage photo ID, and a sequential report reference. Submitted and tracking views use public-safe real-time status subscriptions. New reports remain `status: new` and `aiStatus: pending`; Phase 6 owns Nominatim resolution and Gemini triage. D-04 remains unresolved. |
 | Phase 6  | Pending | —               | —               |
 | Phase 7  | Pending | —               | —               |
 | Phase 8  | Pending | —               | —               |
@@ -892,102 +893,102 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Decision dependency
 
-* [ ] Decision D-02 has been resolved.
+* [x] Decision D-02 has been resolved. See [D-02](decisions/D-02_REPORT_PHOTO_STORAGE.md).
 
 ## Public-app structure
 
-* [ ] Create Submit Report page.
-* [ ] Create Report Submitted page.
-* [ ] Create Track Report page.
-* [ ] Keep the public app separate from the protected dashboard.
-* [ ] Design the public app mobile first.
-* [ ] Prevent public routes from loading private dashboard data.
+* [x] Create Submit Report page.
+* [x] Create Report Submitted page.
+* [x] Create Track Report page.
+* [x] Keep the public app separate from the protected dashboard.
+* [x] Design the public app mobile first.
+* [x] Prevent public routes from loading private dashboard data.
 
 ## Submit Report page
 
-* [ ] Add problem-category field.
-* [ ] Add description field.
-* [ ] Add location-method selection.
-* [ ] Add browser-location option.
-* [ ] Add typed-landmark option.
-* [ ] Add one optional photo.
-* [ ] Add submit action.
-* [ ] Support Overflowing waste point.
-* [ ] Support Illegal dumpsite.
-* [ ] Support Missed collection.
-* [ ] Support Drainage blockage caused by waste.
-* [ ] Support Other waste issue.
+* [x] Add problem-category field.
+* [x] Add description field.
+* [x] Add location-method selection.
+* [x] Add browser-location option.
+* [x] Add typed-landmark option.
+* [x] Add one optional photo.
+* [x] Add submit action.
+* [x] Support Overflowing waste point.
+* [x] Support Illegal dumpsite.
+* [x] Support Missed collection.
+* [x] Support Drainage blockage caused by waste.
+* [x] Support Other waste issue.
 
 ## Submission validation
 
-* [ ] Require description.
-* [ ] Require at least one location method.
-* [ ] Validate supplied coordinates.
-* [ ] Limit upload to one photo.
-* [ ] Validate accepted image types.
-* [ ] Validate approved image size.
-* [ ] Associate readable errors with their fields.
-* [ ] Handle denied browser-location permission.
-* [ ] Preserve entered data after recoverable errors.
+* [x] Require description.
+* [x] Require at least one location method.
+* [x] Validate supplied coordinates.
+* [x] Limit upload to one photo.
+* [x] Validate accepted image types.
+* [x] Validate approved image size.
+* [x] Associate readable errors with their fields.
+* [x] Handle denied browser-location permission.
+* [x] Preserve entered data after recoverable errors.
 
 ## Submission processing
 
-* [ ] Store the original report before AI processing begins.
-* [ ] Generate a unique report reference.
-* [ ] Store submission source as web.
-* [ ] Store submitted time.
-* [ ] Store available coordinates or landmark.
-* [ ] Store the private photo reference where provided.
-* [ ] Begin location resolution.
-* [ ] Begin AI-assisted triage.
-* [ ] Return the submitted state without exposing internal processing details.
+* [x] Store the original report before Phase 6 AI processing.
+* [x] Generate a unique report reference.
+* [x] Store submission source as web.
+* [x] Store submitted time.
+* [x] Store browser coordinates or the exact typed landmark for Phase 6 resolution.
+* [x] Store the private Convex File Storage ID where provided.
+* [x] Store location inputs for Phase 6 resolution; do not call Nominatim.
+* [x] Store the report with AI processing pending for Phase 6; do not call Gemini.
+* [x] Return the submitted state without exposing internal processing details.
 
 ## Report Submitted page
 
-* [ ] Display success state.
-* [ ] Display report reference.
-* [ ] Display submitted time.
-* [ ] Display current public status.
-* [ ] Allow the resident to copy the reference.
-* [ ] Link to Track Report.
-* [ ] Avoid exposing private dashboard data.
+* [x] Display success state.
+* [x] Display report reference.
+* [x] Display submitted time.
+* [x] Display current public status.
+* [x] Allow the resident to copy the reference.
+* [x] Link to Track Report.
+* [x] Avoid exposing private dashboard data.
 
 ## Track Report page
 
-* [ ] Accept a report reference.
-* [ ] Display report category.
-* [ ] Display public-safe location summary.
-* [ ] Display current public status.
-* [ ] Display submitted time.
-* [ ] Display last status update.
-* [ ] Show a clear not-found state.
-* [ ] Never show internal AI reasoning.
-* [ ] Never show internal fleet data.
-* [ ] Never show private contact data.
+* [x] Accept a report reference.
+* [x] Display report category.
+* [x] Display public-safe location summary.
+* [x] Display current public status.
+* [x] Display submitted time.
+* [x] Display last status update.
+* [x] Show a clear not-found state.
+* [x] Never show internal AI reasoning.
+* [x] Never show internal fleet data.
+* [x] Never show private contact data.
 
 ## Public status mapping
 
-* [ ] Map New to Received.
-* [ ] Map Needs clarification to More information required.
-* [ ] Map Under review to Under review.
-* [ ] Map Task created to Scheduled for collection.
-* [ ] Map Scheduled to Scheduled for collection.
-* [ ] Map In progress to In progress.
-* [ ] Map Resolved to Resolved.
-* [ ] Map Duplicate to Under review.
-* [ ] Map Rejected to Under review.
+* [x] Map New to Received.
+* [x] Map Needs clarification to More information required.
+* [x] Map Under review to Under review.
+* [x] Map Task created to Scheduled for collection.
+* [x] Map Scheduled to Scheduled for collection.
+* [x] Map In progress to In progress.
+* [x] Map Resolved to Resolved.
+* [x] Map Duplicate to Under review.
+* [x] Map Rejected to Under review.
 
 ## Public-app acceptance criteria
 
-* [ ] Public web reporting works on mobile.
-* [ ] Original reports are stored before AI processing.
-* [ ] Each submitted report receives one unique reference.
-* [ ] Public tracking reflects current report status.
-* [ ] Invalid references show a safe not-found state.
-* [ ] Photos are not publicly browsable by default.
-* [ ] Loading and realistic error states are implemented.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 5 handoff summary is recorded.
+* [x] Public web reporting works on mobile.
+* [x] Original reports are stored before Phase 6 AI processing.
+* [x] Each submitted report receives one unique reference.
+* [x] Public tracking reflects current report status.
+* [x] Invalid references show a safe not-found state.
+* [x] Photos are not publicly browsable by default.
+* [x] Loading and realistic error states are implemented.
+* [x] Checks for touched files pass.
+* [x] The Phase 5 handoff summary is recorded.
 
 ---
 

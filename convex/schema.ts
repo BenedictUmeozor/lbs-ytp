@@ -84,7 +84,7 @@ export default defineSchema({
     landmarkText: v.optional(v.string()),
     latitude: v.optional(v.number()),
     longitude: v.optional(v.number()),
-    photoReference: v.optional(v.string()),
+    photoStorageId: v.optional(v.id("_storage")),
     requiresCollection: v.optional(v.boolean()),
     needsClarification: v.optional(v.boolean()),
     aiStatus: aiStatusValidator,

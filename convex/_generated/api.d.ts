@@ -17,6 +17,7 @@ import type * as domain_bin_rules from "../domain/bin_rules.js";
 import type * as domain_demo_data from "../domain/demo_data.js";
 import type * as domain_operations from "../domain/operations.js";
 import type * as domain_read_helpers from "../domain/read_helpers.js";
+import type * as domain_report_rules from "../domain/report_rules.js";
 import type * as domain_status_rules from "../domain/status_rules.js";
 import type * as domain_task_helpers from "../domain/task_helpers.js";
 import type * as domain_validators from "../domain/validators.js";
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   "domain/demo_data": typeof domain_demo_data;
   "domain/operations": typeof domain_operations;
   "domain/read_helpers": typeof domain_read_helpers;
+  "domain/report_rules": typeof domain_report_rules;
   "domain/status_rules": typeof domain_status_rules;
   "domain/task_helpers": typeof domain_task_helpers;
   "domain/validators": typeof domain_validators;

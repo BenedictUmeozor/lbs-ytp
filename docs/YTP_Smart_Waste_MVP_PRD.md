@@ -891,6 +891,14 @@ At least one is required:
 - Submission creates a report reference.
 - The original report is stored before AI processing.
 
+### Phase 5 reporting boundary
+
+Residents do not require authentication. Phase 5 stores the original report, browser coordinates or the exact typed landmark, and `aiStatus: pending`; it does not resolve landmarks, reverse geocode, call Gemini, prioritise reports, detect duplicates, or create tasks. Phase 6 owns Nominatim resolution and AI-assisted triage.
+
+### Optional report photos
+
+Optional report photos use Convex File Storage. Only JPEG, PNG and WebP are accepted, with a maximum size of 5 MiB. The application stores only the Convex storage ID. Public submitted and tracking views never include a photo, storage ID or file URL. Authorized direct URLs are controlled-MVP bearer URLs, not strict per-request authorization.
+
 ---
 
 ## 12.2 Report Submitted Page
@@ -1084,13 +1092,7 @@ Use location in this order:
 
 ## 15.2 Typed Landmark Flow
 
-```text
-Resident enters "Bariga Market"
-→ system sends "Bariga Market, Lagos, Nigeria" to Nominatim
-→ Nominatim returns coordinates
-→ system stores landmark and coordinates
-→ report marker appears on the map
-```
+Phase 5 stores the resident's exact trimmed landmark without geocoding or inventing coordinates. In Phase 6, the system may send "Bariga Market, Lagos, Nigeria" to Nominatim, store returned coordinates and make a resolved report marker available on the map.
 
 ## 15.3 Vague Location Rule
 
@@ -1556,7 +1558,7 @@ The PRD requires the following conceptual entities.
 - Landmark text.
 - Latitude.
 - Longitude.
-- Photo reference.
+- Private Convex File Storage ID for an optional photo.
 - Requires collection.
 - Needs clarification.
 - AI status.
@@ -1728,11 +1730,12 @@ Smart-bin device.
 ### Responsibilities
 
 - Validate fields.
-- Store original report.
-- Resolve location.
-- Start AI triage.
+- Store original report and either browser coordinates or the typed landmark.
+- Store AI processing as pending for Phase 6.
 - Create report reference.
 - Return report-submitted state.
+
+Phase 5 does not resolve location, call Nominatim or Gemini, or create tasks automatically.
 
 ---
 
@@ -1817,7 +1820,7 @@ The report should remain stored when AI processing fails.
 - Only required report text is sent to Gemini.
 - Public report tracking exposes only safe status data.
 - The WhatsApp webhook validates its expected source. The physical smart-bin endpoint is intentionally unauthenticated for the controlled MVP and must not be presented as production secure.
-- Uploaded photos are not publicly browsable by default.
+- Uploaded photos use Convex File Storage and are not publicly browsable by default. Public queries never return photo storage IDs or URLs. Generated upload URLs are intentionally public for unauthenticated residents in the controlled MVP; production abuse prevention, rate limiting and orphaned-upload cleanup are outside scope.
 - Environment secrets are not exposed to the browser.
 - Simulated data is clearly labelled.
 - Activity and status changes are auditable.
