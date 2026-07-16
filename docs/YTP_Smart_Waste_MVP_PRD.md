@@ -893,7 +893,7 @@ At least one is required:
 
 ### Phase 5 reporting boundary
 
-Residents do not require authentication. Phase 5 stores the original report, browser coordinates or the exact typed landmark, and `aiStatus: pending`; it does not resolve landmarks, reverse geocode, call Gemini, prioritise reports, detect duplicates, or create tasks. Phase 6 owns Nominatim resolution and AI-assisted triage.
+Residents do not require authentication. Phase 5 stores the original report, browser coordinates or the exact typed landmark, and `aiStatus: pending`; it does not resolve landmarks, reverse geocode, call Gemini, prioritise reports, detect duplicates, or create tasks. Detailed submitted locations remain private operational data for future protected fleet-manager operations. Phase 6 owns Nominatim resolution and AI-assisted triage.
 
 ### Optional report photos
 
@@ -948,6 +948,7 @@ Optional report photos use Convex File Storage. Only JPEG, PNG and WebP are acce
 - Invalid references show a clear not-found state.
 - Internal AI reasoning is never displayed.
 - Internal fleet data is never displayed.
+- Raw browser coordinates and raw typed landmarks are private operational data and are never returned by public tracking. The tracker uses generic location summaries only; a later Phase 6 resolution may create a sanitized summary.
 
 ---
 
@@ -1735,7 +1736,7 @@ Smart-bin device.
 - Create report reference.
 - Return report-submitted state.
 
-Phase 5 does not resolve location, call Nominatim or Gemini, or create tasks automatically.
+Phase 5 does not resolve location, call Nominatim or Gemini, or create tasks automatically. Expected submission-validation failures use structured Convex application errors so the public form can display safe field-level messages; unexpected errors use one generic public-safe message and never expose stacks or backend details.
 
 ---
 
@@ -1818,7 +1819,7 @@ The report should remain stored when AI processing fails.
 - Public residents do not access dashboard data.
 - Phone numbers are not sent to Gemini.
 - Only required report text is sent to Gemini.
-- Public report tracking exposes only safe status data.
+- Public report tracking exposes only safe status data and generic location summaries. It never returns raw browser coordinates or typed landmarks; detailed submitted locations remain private operational data until a future protected fleet-manager operation. Phase 6 may later create a sanitized location summary.
 - The WhatsApp webhook validates its expected source. The physical smart-bin endpoint is intentionally unauthenticated for the controlled MVP and must not be presented as production secure.
 - Uploaded photos use Convex File Storage and are not publicly browsable by default. Public queries never return photo storage IDs or URLs. Generated upload URLs are intentionally public for unauthenticated residents in the controlled MVP; production abuse prevention, rate limiting and orphaned-upload cleanup are outside scope.
 - Environment secrets are not exposed to the browser.

@@ -11,22 +11,48 @@ import {
   MAX_REPORT_PHOTO_SIZE,
 } from "@/convex/domain/report_rules";
 import { useMutation } from "convex/react";
+import { ConvexError } from "convex/values";
 import { LocateFixed, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { REPORT_CATEGORIES, type ReportCategory } from "./report-types";
 
 type LocationMode = "coordinates" | "landmark";
 type Coordinates = { latitude: number; longitude: number };
-type FormErrors = Partial<
-  Record<"category" | "description" | "location" | "landmark" | "photo", string>
->;
+type FormField = "category" | "description" | "location" | "landmark" | "photo";
+type FormErrors = Partial<Record<FormField, string>>;
+type ReportSubmissionErrorData = {
+  code:
+    | "INVALID_DESCRIPTION"
+    | "INVALID_LOCATION"
+    | "INVALID_LANDMARK"
+    | "INVALID_PHOTO"
+    | "SUBMISSION_FAILED";
+  field?: Exclude<FormField, "category">;
+  message: string;
+};
 
 function formatFileSize(size: number): string {
   return `${(size / 1024 / 1024).toFixed(size < 1024 * 1024 ? 1 : 2)} MiB`;
 }
 
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
+function isReportSubmissionErrorData(
+  value: unknown,
+): value is ReportSubmissionErrorData {
+  if (typeof value !== "object" || value === null) return false;
+  const { code, field, message } = value as Record<string, unknown>;
+  return (
+    (code === "INVALID_DESCRIPTION" ||
+      code === "INVALID_LOCATION" ||
+      code === "INVALID_LANDMARK" ||
+      code === "INVALID_PHOTO" ||
+      code === "SUBMISSION_FAILED") &&
+    typeof message === "string" &&
+    (field === undefined ||
+      field === "description" ||
+      field === "location" ||
+      field === "landmark" ||
+      field === "photo")
+  );
 }
 
 export function SubmitReportForm() {
@@ -41,13 +67,40 @@ export function SubmitReportForm() {
   const [landmarkText, setLandmarkText] = useState("");
   const [photo, setPhoto] = useState<File>();
   const [errors, setErrors] = useState<FormErrors>({});
+  const [formError, setFormError] = useState("");
   const [locationState, setLocationState] = useState<
     "idle" | "requesting" | "success" | "error"
   >("idle");
   const [locationMessage, setLocationMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const firstErrorRef = useRef<HTMLSelectElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const categoryRef = useRef<HTMLSelectElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const locationRef = useRef<HTMLInputElement>(null);
+  const landmarkRef = useRef<HTMLInputElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
+  const formErrorRef = useRef<HTMLParagraphElement>(null);
+
+  function focusField(field?: FormField) {
+    requestAnimationFrame(() => {
+      if (field === "category") categoryRef.current?.focus();
+      else if (field === "description") descriptionRef.current?.focus();
+      else if (field === "location") locationRef.current?.focus();
+      else if (field === "landmark") landmarkRef.current?.focus();
+      else if (field === "photo") photoRef.current?.focus();
+      else formErrorRef.current?.focus();
+    });
+  }
+
+  function focusFirstError(nextErrors: FormErrors) {
+    const fields: FormField[] = [
+      "category",
+      "description",
+      "location",
+      "landmark",
+      "photo",
+    ];
+    focusField(fields.find((field) => nextErrors[field] !== undefined));
+  }
 
   function validate(): FormErrors {
     const nextErrors: FormErrors = {};
@@ -127,7 +180,10 @@ export function SubmitReportForm() {
 
   function selectPhoto(file?: File) {
     setPhoto(file);
-    if (file === undefined) return;
+    if (file === undefined) {
+      setErrors((current) => ({ ...current, photo: undefined }));
+      return;
+    }
     if (!isAcceptedReportPhotoType(file.type)) {
       setErrors((current) => ({
         ...current,
@@ -143,13 +199,20 @@ export function SubmitReportForm() {
     }
   }
 
+  function removePhoto() {
+    setPhoto(undefined);
+    if (photoRef.current) photoRef.current.value = "";
+    setErrors((current) => ({ ...current, photo: undefined }));
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrors({});
+    setFormError("");
     const nextErrors = validate();
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
-      firstErrorRef.current?.focus();
+      focusFirstError(nextErrors);
       return;
     }
 
@@ -157,24 +220,29 @@ export function SubmitReportForm() {
     try {
       let photoStorageId: Id<"_storage"> | undefined;
       if (photo !== undefined) {
-        const uploadUrl = await generatePhotoUploadUrl({});
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": photo.type },
-          body: photo,
-        });
-        if (!response.ok)
-          throw new Error("Photo upload failed. Please try again.");
-        const body: unknown = await response.json();
-        if (
-          typeof body !== "object" ||
-          body === null ||
-          !("storageId" in body) ||
-          typeof body.storageId !== "string"
-        ) {
-          throw new Error("Photo upload failed. Please try again.");
+        try {
+          const uploadUrl = await generatePhotoUploadUrl({});
+          const response = await fetch(uploadUrl, {
+            method: "POST",
+            headers: { "Content-Type": photo.type },
+            body: photo,
+          });
+          if (!response.ok) throw new Error("Photo upload failed.");
+          const body: unknown = await response.json();
+          if (
+            typeof body !== "object" ||
+            body === null ||
+            !("storageId" in body) ||
+            typeof body.storageId !== "string"
+          ) {
+            throw new Error("Photo upload failed.");
+          }
+          photoStorageId = body.storageId as Id<"_storage">;
+        } catch {
+          setErrors({ photo: "Photo upload failed. Please try again." });
+          focusField("photo");
+          return;
         }
-        photoStorageId = body.storageId as Id<"_storage">;
       }
 
       const result = await submitWebReport({
@@ -191,22 +259,24 @@ export function SubmitReportForm() {
         `/report/submitted?reference=${encodeURIComponent(result.referenceNumber)}`,
       );
     } catch (error) {
-      setErrors({
-        photo:
-          photo !== undefined
-            ? errorMessage(
-                error,
-                "Unable to submit your report. Please try again.",
-              )
-            : undefined,
-        description:
-          photo === undefined
-            ? errorMessage(
-                error,
-                "Unable to submit your report. Please try again.",
-              )
-            : undefined,
-      });
+      if (
+        error instanceof ConvexError &&
+        isReportSubmissionErrorData(error.data)
+      ) {
+        const { field, message } = error.data;
+        if (field !== undefined) {
+          setErrors({ [field]: message });
+          focusField(field);
+        } else {
+          setFormError(message);
+          focusField();
+        }
+      } else {
+        setFormError(
+          "Unable to submit your report right now. Please try again.",
+        );
+        focusField();
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -221,7 +291,7 @@ export function SubmitReportForm() {
           What is the problem?
         </label>
         <select
-          ref={firstErrorRef}
+          ref={categoryRef}
           id="category"
           value={category}
           onChange={(event) =>
@@ -239,7 +309,7 @@ export function SubmitReportForm() {
           ))}
         </select>
         {errors.category ? (
-          <p id="category-error" className="text-sm text-red-700">
+          <p id="category-error" role="alert" className="text-sm text-red-700">
             {errors.category}
           </p>
         ) : null}
@@ -255,6 +325,7 @@ export function SubmitReportForm() {
           </span>
         </div>
         <textarea
+          ref={descriptionRef}
           id="description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
@@ -266,29 +337,49 @@ export function SubmitReportForm() {
           className="min-h-32 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-base outline-none focus:border-emerald-700 focus:ring-3 focus:ring-emerald-700/20"
         />
         {errors.description ? (
-          <p id="description-error" className="text-sm text-red-700">
+          <p
+            id="description-error"
+            role="alert"
+            className="text-sm text-red-700"
+          >
             {errors.description}
           </p>
         ) : null}
       </div>
 
-      <fieldset className="space-y-3">
+      <fieldset
+        className="space-y-3"
+        aria-describedby={errors.location ? "location-error" : undefined}
+      >
         <legend className="text-sm font-semibold">Where is it?</legend>
         <div className="grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => chooseLocationMode("coordinates")}
+          <label
             className={`rounded-lg border p-3 text-left text-sm font-medium ${locationMode === "coordinates" ? "border-emerald-700 bg-emerald-50 text-emerald-950" : "border-stone-300 bg-white"}`}
           >
+            <input
+              type="radio"
+              name="location-method"
+              value="coordinates"
+              ref={locationRef}
+              checked={locationMode === "coordinates"}
+              onChange={() => chooseLocationMode("coordinates")}
+              className="mr-2 accent-emerald-800"
+            />
             Use my current location
-          </button>
-          <button
-            type="button"
-            onClick={() => chooseLocationMode("landmark")}
+          </label>
+          <label
             className={`rounded-lg border p-3 text-left text-sm font-medium ${locationMode === "landmark" ? "border-emerald-700 bg-emerald-50 text-emerald-950" : "border-stone-300 bg-white"}`}
           >
+            <input
+              type="radio"
+              name="location-method"
+              value="landmark"
+              checked={locationMode === "landmark"}
+              onChange={() => chooseLocationMode("landmark")}
+              className="mr-2 accent-emerald-800"
+            />
             Enter a nearby landmark
-          </button>
+          </label>
         </div>
         {locationMode === "coordinates" ? (
           <div className="rounded-lg border border-stone-200 bg-white p-4">
@@ -321,6 +412,7 @@ export function SubmitReportForm() {
               Nearby landmark
             </label>
             <Input
+              ref={landmarkRef}
               id="landmark"
               value={landmarkText}
               onChange={(event) => setLandmarkText(event.target.value)}
@@ -333,14 +425,20 @@ export function SubmitReportForm() {
               For example: Pedro Bus Stop, Bariga.
             </p>
             {errors.landmark ? (
-              <p id="landmark-error" className="text-sm text-red-700">
+              <p
+                id="landmark-error"
+                role="alert"
+                className="text-sm text-red-700"
+              >
                 {errors.landmark}
               </p>
             ) : null}
           </div>
         )}
         {errors.location ? (
-          <p className="text-sm text-red-700">{errors.location}</p>
+          <p id="location-error" role="alert" className="text-sm text-red-700">
+            {errors.location}
+          </p>
         ) : null}
       </fieldset>
 
@@ -350,7 +448,7 @@ export function SubmitReportForm() {
           <span className="font-normal text-stone-500">(optional)</span>
         </label>
         <Input
-          ref={fileInputRef}
+          ref={photoRef}
           id="photo"
           type="file"
           accept={ACCEPTED_REPORT_PHOTO_TYPES.join(",")}
@@ -371,23 +469,29 @@ export function SubmitReportForm() {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => {
-                setPhoto(undefined);
-                if (fileInputRef.current) fileInputRef.current.value = "";
-              }}
+              onClick={removePhoto}
             >
-              {" "}
               <X aria-hidden="true" /> Remove
             </Button>
           </div>
         ) : null}
         {errors.photo ? (
-          <p id="photo-error" className="text-sm text-red-700">
+          <p id="photo-error" role="alert" className="text-sm text-red-700">
             {errors.photo}
           </p>
         ) : null}
       </div>
 
+      {formError ? (
+        <p
+          ref={formErrorRef}
+          tabIndex={-1}
+          role="alert"
+          className="text-sm text-red-700 outline-none"
+        >
+          {formError}
+        </p>
+      ) : null}
       <Button
         type="submit"
         size="lg"

@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { internalQuery, mutation, query } from "./_generated/server";
 import {
@@ -56,10 +56,11 @@ export const getPublicByReference = query({
       referenceNumber: report.referenceNumber,
       category: report.category,
       locationSummary:
-        report.landmarkText ??
-        (report.latitude !== undefined && report.longitude !== undefined
+        report.latitude !== undefined && report.longitude !== undefined
           ? "Location shared by resident"
-          : "Location unavailable"),
+          : report.landmarkText !== undefined
+            ? "Landmark provided by resident"
+            : "Location unavailable",
       publicStatus: getPublicReportStatus(report.status),
       submittedAt: report._creationTime,
       lastStatusUpdate: report.statusUpdatedAt,
@@ -73,6 +74,21 @@ export const generatePhotoUploadUrl = mutation({
   returns: v.string(),
   handler: (ctx) => ctx.storage.generateUploadUrl(),
 });
+
+type ReportSubmissionErrorData = {
+  code:
+    | "INVALID_DESCRIPTION"
+    | "INVALID_LOCATION"
+    | "INVALID_LANDMARK"
+    | "INVALID_PHOTO"
+    | "SUBMISSION_FAILED";
+  field?: "description" | "location" | "landmark" | "photo";
+  message: string;
+};
+
+function throwReportSubmissionError(data: ReportSubmissionErrorData): never {
+  throw new ConvexError(data);
+}
 
 const submissionValidator = v.object({
   referenceNumber: v.string(),
@@ -93,7 +109,11 @@ export const submitWebReport = mutation({
   handler: async (ctx, args) => {
     const originalMessage = args.description.trim();
     if (originalMessage.length === 0 || originalMessage.length > 1000) {
-      throw new Error("Description must be between 1 and 1,000 characters.");
+      throwReportSubmissionError({
+        code: "INVALID_DESCRIPTION",
+        field: "description",
+        message: "Description must be between 1 and 1,000 characters.",
+      });
     }
 
     const hasLatitude = args.latitude !== undefined;
@@ -102,7 +122,11 @@ export const submitWebReport = mutation({
     const hasLandmark = landmarkText !== undefined && landmarkText.length > 0;
 
     if (hasLatitude !== hasLongitude || (hasLatitude && hasLandmark)) {
-      throw new Error("Choose either coordinates or a nearby landmark.");
+      throwReportSubmissionError({
+        code: "INVALID_LOCATION",
+        field: "location",
+        message: "Choose either your current location or a nearby landmark.",
+      });
     }
 
     const hasCoordinates = hasLatitude && hasLongitude;
@@ -119,14 +143,24 @@ export const submitWebReport = mutation({
         longitude < -180 ||
         longitude > 180
       ) {
-        throw new Error("Location coordinates are invalid.");
+        throwReportSubmissionError({
+          code: "INVALID_LOCATION",
+          field: "location",
+          message: "Location coordinates are invalid.",
+        });
       }
-    } else if (
-      !hasLandmark ||
-      landmarkText.length < 3 ||
-      landmarkText.length > 200
-    ) {
-      throw new Error("Enter a nearby landmark between 3 and 200 characters.");
+    } else if (!hasLandmark) {
+      throwReportSubmissionError({
+        code: "INVALID_LOCATION",
+        field: "location",
+        message: "Share your current location or enter a nearby landmark.",
+      });
+    } else if (landmarkText.length < 3 || landmarkText.length > 200) {
+      throwReportSubmissionError({
+        code: "INVALID_LANDMARK",
+        field: "landmark",
+        message: "Enter a nearby landmark between 3 and 200 characters.",
+      });
     }
 
     if (args.photoStorageId !== undefined) {
@@ -137,7 +171,12 @@ export const submitWebReport = mutation({
         !isAcceptedReportPhotoType(metadata.contentType) ||
         !isAcceptedReportPhotoSize(metadata.size)
       ) {
-        throw new Error("The uploaded photo could not be accepted.");
+        throwReportSubmissionError({
+          code: "INVALID_PHOTO",
+          field: "photo",
+          message:
+            "The uploaded photo must be a JPEG, PNG or WebP image no larger than 5 MiB.",
+        });
       }
     }
 

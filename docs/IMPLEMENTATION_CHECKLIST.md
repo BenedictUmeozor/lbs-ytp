@@ -148,7 +148,7 @@ Update this table after completing each phase.
 | Phase 2  | Complete | 2026-07-15 | Phase 2A implemented the Clerk and Convex authentication foundation: restricted manual demo-account flow, normalized Convex fleet-manager authorization, protected `/dashboard` routes, sign-in/sign-out, and a safe current-user query. Phase 2B built the persistent dashboard shell, reusable dashboard UI primitives, one authenticated real-time `dashboard.getOverviewData` query protected by `requireFleetManager()`, the complete Overview page with a non-interactive OpenStreetMap/Leaflet preview, and protected placeholder pages for every later dashboard section. The correction pass improved authentication failure handling, generic runtime errors, empty states and shared map data loading. Phase 3 should extend the reusable Leaflet map foundation into the full interactive operations map. |
 | Phase 3  | Complete | 2026-07-15 | Dedicated protected map query with live Convex subscriptions, an interactive Leaflet map, bins/reports/trucks/depot/route layers, filters and search, live selected-item details, a keyboard-accessible operational list, and read-only active-route rendering. Route re-optimisation remains Phase 9; stop completion remains Phase 10. |
 | Phase 4  | Complete | 2026-07-15 | Smart Bins provides a protected live list/detail view, public controlled-MVP hardware ingestion with payload and assignment validation, automatic task rules, real-device offline evaluation, and auditable manual/sensor emptying confirmation. The correction pass preserves awaiting-confirmation state, restores connectivity for delayed readings, rejects conflicting duplicates, safely handles invalid selected-bin URLs, fixes authentication-state ordering, and records sensor-confirmed status history. The final correction resets bin-specific UI state when selection changes, uses structured Convex application errors for hardware-domain failures, and corrects the real-device payload example. The awaiting-confirmation helper is ready, but its invocation from the later Collection Tasks “mark task collected” mutation remains deferred. |
-| Phase 5  | Complete | 2026-07-16 | Public unauthenticated reporting now stores the resident-selected category, original message, browser coordinates or typed landmark, optional private Convex File Storage photo ID, and a sequential report reference. Submitted and tracking views use public-safe real-time status subscriptions. New reports remain `status: new` and `aiStatus: pending`; Phase 6 owns Nominatim resolution and Gemini triage. D-04 remains unresolved. |
+| Phase 5  | Complete | 2026-07-16 | Public unauthenticated reporting stores the resident-selected category, original message, browser coordinates or typed landmark, optional private Convex File Storage photo ID, and a sequential report reference. Submitted and tracking views use public-safe real-time status subscriptions; raw landmarks and coordinates are excluded from public tracking. Structured field-level Convex application errors, safe unexpected-error messaging, a public route error boundary and accessible location/form corrections are complete. New reports remain `status: new` and `aiStatus: pending`; Phase 6 owns Nominatim resolution and Gemini triage. D-04 remains unresolved. |
 | Phase 6  | Pending | —               | —               |
 | Phase 7  | Pending | —               | —               |
 | Phase 8  | Pending | —               | —               |
@@ -927,7 +927,7 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 * [x] Limit upload to one photo.
 * [x] Validate accepted image types.
 * [x] Validate approved image size.
-* [x] Associate readable errors with their fields.
+* [x] Associate readable structured application errors with their fields; unexpected errors use a safe form-level message.
 * [x] Handle denied browser-location permission.
 * [x] Preserve entered data after recoverable errors.
 
@@ -957,7 +957,7 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 * [x] Accept a report reference.
 * [x] Display report category.
-* [x] Display public-safe location summary.
+* [x] Display a generic public-safe location summary only; never return raw coordinates or typed landmarks.
 * [x] Display current public status.
 * [x] Display submitted time.
 * [x] Display last status update.
@@ -986,7 +986,8 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 * [x] Public tracking reflects current report status.
 * [x] Invalid references show a safe not-found state.
 * [x] Photos are not publicly browsable by default.
-* [x] Loading and realistic error states are implemented.
+* [x] Raw submitted locations are private; tracking uses generic summaries only.
+* [x] Loading and realistic error states are implemented, including a safe public route error boundary.
 * [x] Checks for touched files pass.
 * [x] The Phase 5 handoff summary is recorded.
 
