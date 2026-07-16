@@ -153,7 +153,7 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
                 ({detail.linkedTask.status})
               </p>
             )}
-            {detail.candidateTask && (
+            {!terminal && detail.candidateTask && (
               <section className="rounded border border-amber-300 bg-amber-50 p-3 sm:col-span-2">
                 <h3 className="font-medium">Possible existing task</h3>
                 <p className="mt-1 text-sm">

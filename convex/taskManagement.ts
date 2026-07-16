@@ -12,7 +12,12 @@ import { requireFleetManager } from "./domain/auth";
 import {
   addTaskToProposedRoute,
   removeTaskFromProposedRoute,
+  updateTaskRouteStopStatus,
 } from "./domain/route_task_helpers";
+import {
+  resolveLinkedReportsForCollectedTask,
+  syncLinkedReportTaskStatus,
+} from "./domain/task_helpers";
 import {
   canCancelTask,
   canChangeTaskPriority,
@@ -366,6 +371,11 @@ export const markUnableToComplete = mutation({
         : {}),
     });
     await restoreLinkedReports(ctx, task, user._id, now);
+    if (!removedFromProposedRoute && task.routeId !== undefined) {
+      const route = await ctx.db.get(task.routeId);
+      if (route !== null && route.status !== "proposed")
+        await updateTaskRouteStopStatus(ctx, task, "unable_to_complete", now);
+    }
     await clearCandidateReferences(ctx, task._id);
     await insertNotification(
       ctx,
@@ -450,42 +460,10 @@ export const markCollected = mutation({
       statusUpdatedAt: now,
       completedAt: now,
     });
-    if (task.sourceType === "smart_bin") {
+    if (task.sourceBinId !== undefined)
       await markBinAwaitingEmptyConfirmation(ctx, task);
-    } else {
-      for (const reportId of task.linkedReportIds) {
-        const report = await ctx.db.get(reportId);
-        if (
-          report === null ||
-          ["resolved", "duplicate", "rejected"].includes(report.status)
-        )
-          continue;
-        await ctx.db.patch(report._id, {
-          status: "resolved",
-          resolvedAt: now,
-          candidateTaskId: undefined,
-          statusUpdatedAt: now,
-        });
-        await insertActivityEvent(
-          ctx,
-          "report_status_changed",
-          `Report ${report.referenceNumber} status changed from ${report.status} to resolved.`,
-          "citizen_report",
-          report._id,
-          user._id,
-          report.status,
-          "resolved",
-        );
-        await insertActivityEvent(
-          ctx,
-          "report_resolved",
-          `Report ${report.referenceNumber} resolved after task ${task.displayId} was collected.`,
-          "citizen_report",
-          report._id,
-          user._id,
-        );
-      }
-    }
+    await resolveLinkedReportsForCollectedTask(ctx, task, user._id, now);
+    await updateTaskRouteStopStatus(ctx, task, "completed", now);
     await clearCandidateReferences(ctx, task._id);
     await insertActivityEvent(
       ctx,
@@ -530,6 +508,7 @@ export const assignToProposedRoute = mutation({
       scheduledAt: now,
       statusUpdatedAt: now,
     });
+    await syncLinkedReportTaskStatus(ctx, task, "scheduled", user._id, now);
     await insertActivityEvent(
       ctx,
       "task_status_changed",
@@ -565,6 +544,7 @@ export const removeFromProposedRoute = mutation({
       scheduledAt: undefined,
       statusUpdatedAt: now,
     });
+    await syncLinkedReportTaskStatus(ctx, task, "pending", user._id, now);
     await insertActivityEvent(
       ctx,
       "task_status_changed",

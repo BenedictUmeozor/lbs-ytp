@@ -15,6 +15,7 @@ import {
   hasValidOperationalCoordinates,
   haversineDistanceMeters,
   isReportProcessingActive,
+  isTerminalReportStatus,
   validatedManagerNote,
 } from "./domain/report_management_rules";
 import {
@@ -337,7 +338,9 @@ export const getReportDetail = query({
               priority: linkedTask.priority,
             },
       candidateTask:
-        candidateTask === null || !isActiveTaskStatus(candidateTask.status)
+        isTerminalReportStatus(report.status) ||
+        candidateTask === null ||
+        !isActiveTaskStatus(candidateTask.status)
           ? null
           : {
               id: candidateTask._id,
@@ -925,6 +928,7 @@ export const markDuplicate = mutation({
     await ctx.db.patch(report._id, {
       status: "duplicate",
       duplicateOfReportId: target._id,
+      candidateTaskId: undefined,
       needsClarification: false,
       statusUpdatedAt: now,
     });
@@ -960,6 +964,7 @@ export const rejectReport = mutation({
     const now = Date.now();
     await ctx.db.patch(report._id, {
       status: "rejected",
+      candidateTaskId: undefined,
       needsClarification: false,
       statusUpdatedAt: now,
     });
@@ -1004,6 +1009,7 @@ export const resolveReport = mutation({
     await ctx.db.patch(report._id, {
       status: "resolved",
       resolvedAt: now,
+      candidateTaskId: undefined,
       needsClarification: false,
       statusUpdatedAt: now,
     });

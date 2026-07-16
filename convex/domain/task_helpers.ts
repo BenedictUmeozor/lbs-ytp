@@ -1,9 +1,82 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
-import { haversineDistanceMeters } from "./report_management_rules";
-import { isActiveTaskStatus } from "./task_rules";
+import {
+  haversineDistanceMeters,
+  isTerminalReportStatus,
+} from "./report_management_rules";
+import { isActiveTaskStatus, reportStatusForTaskStatus } from "./task_rules";
 import type { Priority, ReportCategory } from "./validators";
 import { insertActivityEvent } from "./write_helpers";
+
+export async function syncLinkedReportTaskStatus(
+  ctx: MutationCtx,
+  task: Doc<"collectionTasks">,
+  targetTaskStatus: Doc<"collectionTasks">["status"],
+  actorUserId: Id<"users"> | undefined,
+  now: number,
+) {
+  const targetReportStatus = reportStatusForTaskStatus(targetTaskStatus);
+  if (targetReportStatus === null) return;
+  for (const reportId of task.linkedReportIds) {
+    const report = await ctx.db.get(reportId);
+    if (
+      report === null ||
+      isTerminalReportStatus(report.status) ||
+      report.status === targetReportStatus
+    )
+      continue;
+    await ctx.db.patch(report._id, {
+      status: targetReportStatus,
+      statusUpdatedAt: now,
+    });
+    await insertActivityEvent(
+      ctx,
+      "report_status_changed",
+      `Report ${report.referenceNumber} status changed from ${report.status} to ${targetReportStatus}.`,
+      "citizen_report",
+      report._id,
+      actorUserId,
+      report.status,
+      targetReportStatus,
+    );
+  }
+}
+
+export async function resolveLinkedReportsForCollectedTask(
+  ctx: MutationCtx,
+  task: Doc<"collectionTasks">,
+  actorUserId: Id<"users"> | undefined,
+  now: number,
+) {
+  for (const reportId of task.linkedReportIds) {
+    const report = await ctx.db.get(reportId);
+    if (report === null || isTerminalReportStatus(report.status)) continue;
+    await ctx.db.patch(report._id, {
+      status: "resolved",
+      resolvedAt: now,
+      candidateTaskId: undefined,
+      statusUpdatedAt: now,
+    });
+    await insertActivityEvent(
+      ctx,
+      "report_status_changed",
+      `Report ${report.referenceNumber} status changed from ${report.status} to resolved.`,
+      "citizen_report",
+      report._id,
+      actorUserId,
+      report.status,
+      "resolved",
+    );
+    await insertActivityEvent(
+      ctx,
+      "report_resolved",
+      `Report ${report.referenceNumber} resolved after task ${task.displayId} was collected.`,
+      "citizen_report",
+      report._id,
+      actorUserId,
+    );
+  }
+}
 
 export async function getActiveCollectionTask(
   ctx: MutationCtx,

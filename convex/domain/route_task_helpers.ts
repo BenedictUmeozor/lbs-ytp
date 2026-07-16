@@ -1,5 +1,30 @@
-import type { Id } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
+
+export async function updateTaskRouteStopStatus(
+  ctx: MutationCtx,
+  task: Doc<"collectionTasks">,
+  status: "completed" | "unable_to_complete",
+  now: number,
+) {
+  const stop = await ctx.db
+    .query("routeStops")
+    .withIndex("by_taskId", (q) => q.eq("taskId", task._id))
+    .first();
+  if (stop === null) return null;
+  if (task.routeId !== undefined && stop.routeId !== task.routeId)
+    throw new Error("The route stop does not belong to the task route.");
+  if (
+    stop.status === status &&
+    (status !== "completed" || stop.completedAt !== undefined)
+  )
+    return stop;
+  await ctx.db.patch(stop._id, {
+    status,
+    ...(status === "completed" ? { completedAt: now } : {}),
+  });
+  return stop;
+}
 
 export async function addTaskToProposedRoute(
   ctx: MutationCtx,
