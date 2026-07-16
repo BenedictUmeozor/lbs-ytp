@@ -4,7 +4,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { Button } from "@/components/ui/button";
@@ -290,7 +290,6 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
                   }
                   submittedLatitude={r.submittedLatitude}
                   submittedLongitude={r.submittedLongitude}
-                  referenceNumber={r.referenceNumber}
                 />
               </div>
             </section>
@@ -385,8 +384,18 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
 
 /* ─── Action forms ─────────────────────────────────────────────── */
 
+type ActionName =
+  | "classification"
+  | "coordinates"
+  | "clarification"
+  | "create_task"
+  | "link_task"
+  | "duplicate"
+  | "reject"
+  | "resolve";
+
 function ActionsSection({ detail }: { detail: ReportDetail }) {
-  const [activeForm, setActiveForm] = useState<string | null>(null);
+  const [activeForm, setActiveForm] = useState<ActionName | null>(null);
   const close = () => setActiveForm(null);
   const r = detail.report;
   const hasActiveTask =
@@ -405,34 +414,61 @@ function ActionsSection({ detail }: { detail: ReportDetail }) {
     hasCoords && !hasActiveTask && detail.nearbyReports.length > 0;
   const canResolve =
     detail.linkedTask === null || detail.linkedTask.status === "collected";
+  const availability = useMemo(
+    () =>
+      ({
+        classification: true,
+        coordinates: canCoordinate,
+        clarification: !hasActiveTask,
+        create_task: canTask,
+        link_task: canLink,
+        duplicate: canDuplicate,
+        reject: !hasActiveTask,
+        resolve: canResolve,
+      }) as const,
+    [canCoordinate, canDuplicate, canLink, canResolve, canTask, hasActiveTask],
+  );
+  const activeFormAvailable = activeForm === null || availability[activeForm];
 
-  if (activeForm === null) {
-    const actions = [
-      ["classification", "Classification", classificationAvailable],
-      ["coordinates", "Update coordinates", canCoordinate],
-      ["clarification", "Request info", !hasActiveTask],
-      ["create_task", "Create task", canTask],
-      ["link_task", "Link task", canLink],
-      ["duplicate", "Mark duplicate", canDuplicate],
-      ["reject", "Reject", !hasActiveTask],
-      ["resolve", "Resolve", canResolve],
-    ] as const;
+  useEffect(() => {
+    if (activeForm === null || availability[activeForm]) return;
+    const timeout = window.setTimeout(() => setActiveForm(null));
+    return () => window.clearTimeout(timeout);
+  }, [activeForm, availability]);
+
+  const actions: [ActionName, string][] = [
+    ["classification", "Classification"],
+    ["coordinates", "Update coordinates"],
+    ["clarification", "Request info"],
+    ["create_task", "Create task"],
+    ["link_task", "Link task"],
+    ["duplicate", "Mark duplicate"],
+    ["reject", "Reject"],
+    ["resolve", "Resolve"],
+  ];
+
+  if (activeForm === null || !activeFormAvailable) {
     return (
       <Card>
         <CardContent className="space-y-2 pt-4">
           <div className="flex flex-wrap gap-2">
-            {actions.map(([id, label, enabled]) => (
+            {actions.map(([id, label]) => (
               <Button
                 key={id}
                 size="sm"
                 variant="outline"
-                disabled={!enabled}
-                onClick={() => enabled && setActiveForm(id)}
+                disabled={!availability[id]}
+                onClick={() => availability[id] && setActiveForm(id)}
               >
                 {label}
               </Button>
             ))}
           </div>
+          {!activeFormAvailable && (
+            <p className="text-muted-foreground text-xs">
+              This action is no longer available after a live update.
+            </p>
+          )}
           <p className="text-muted-foreground text-xs">
             Unavailable actions require settled processing, valid coordinates,
             or an eligible task as applicable.
@@ -517,16 +553,22 @@ function ClassificationForm({
     }
   };
 
-  const handleConfirm = () =>
-    run(() => confirm({ reportId: r.id }), "Classification confirmed.");
+  const canEditClassification = true;
+  const canConfirmClassification =
+    r.category !== undefined &&
+    r.priority !== undefined &&
+    r.classificationConfirmedAt === undefined;
+
+  const handleConfirm = () => {
+    if (!canConfirmClassification) return;
+    return run(() => confirm({ reportId: r.id }), "Classification confirmed.");
+  };
 
   const handleUpdate = () =>
     run(
       () => update({ reportId: r.id, category: category, priority: priority }),
       "Classification updated.",
     );
-
-  const classificationDone = r.classificationConfirmedAt !== undefined;
 
   return (
     <ActionFormCard title="Classification" onClose={onClose}>
@@ -563,15 +605,17 @@ function ClassificationForm({
         </select>
       </label>
       <div className="mt-3 flex gap-2">
-        {!classificationDone && (
-          <Button size="sm" disabled={state.isRunning} onClick={handleConfirm}>
-            {state.isRunning ? "Working…" : "Confirm"}
-          </Button>
-        )}
+        <Button
+          size="sm"
+          disabled={state.isRunning || !canConfirmClassification}
+          onClick={handleConfirm}
+        >
+          {state.isRunning ? "Working…" : "Confirm"}
+        </Button>
         <Button
           size="sm"
           variant="outline"
-          disabled={state.isRunning}
+          disabled={state.isRunning || !canEditClassification}
           onClick={handleUpdate}
         >
           {state.isRunning ? "Working…" : "Save"}
@@ -731,16 +775,13 @@ function CreateTaskForm({
     if (state.isRunning) return;
     setState({ message: null, isRunning: true });
     try {
-      const result = await createTask({
+      await createTask({
         reportId: detail.report.id,
         priority: priority,
         reason,
       });
-      setState({
-        message: `Task ${result.displayId} created.`,
-        isRunning: false,
-      });
       setReason("");
+      onClose();
     } catch (error) {
       setState({ message: getReportActionError(error), isRunning: false });
     }
@@ -811,7 +852,8 @@ function LinkTaskForm({
     setState({ message: null, isRunning: true });
     try {
       await linkTask({ reportId: detail.report.id, taskId: taskId });
-      setState({ message: "Task linked.", isRunning: false });
+      setTaskId("");
+      onClose();
     } catch (error) {
       setState({ message: getReportActionError(error), isRunning: false });
     }

@@ -30,13 +30,11 @@ export function ReportLocationMapInner({
   operationalLongitude,
   submittedLatitude,
   submittedLongitude,
-  referenceNumber,
 }: {
   operationalLatitude?: number;
   operationalLongitude?: number;
   submittedLatitude?: number;
   submittedLongitude?: number;
-  referenceNumber: string;
 }) {
   const hasResolved =
     operationalLatitude !== undefined &&
@@ -90,9 +88,9 @@ export function ReportLocationMapInner({
           pathOptions={{ color: "#7c3aed" }}
         >
           <Tooltip permanent direction="top">
-            {onlySubmitted || submittedIsDistinct
-              ? "Operational location"
-              : referenceNumber}
+            {hasSubmitted && !submittedIsDistinct
+              ? "Submitted and operational location"
+              : "Operational location"}
           </Tooltip>
         </CircleMarker>
       )}
@@ -104,9 +102,7 @@ export function ReportLocationMapInner({
           pathOptions={{ color: "#2563eb", fillOpacity: 0.25 }}
         >
           <Tooltip permanent direction={hasResolved ? "bottom" : "top"}>
-            {onlySubmitted
-              ? `${referenceNumber} (submitted GPS)`
-              : "Submitted GPS pin"}
+            Submitted GPS pin
           </Tooltip>
         </CircleMarker>
       )}

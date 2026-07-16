@@ -18,7 +18,6 @@ export function ReportLocationMap(props: {
   operationalLongitude?: number;
   submittedLatitude?: number;
   submittedLongitude?: number;
-  referenceNumber: string;
 }) {
   const hasResolved =
     props.operationalLatitude !== undefined &&
@@ -35,7 +34,6 @@ export function ReportLocationMap(props: {
       operationalLongitude={props.operationalLongitude}
       submittedLatitude={props.submittedLatitude}
       submittedLongitude={props.submittedLongitude}
-      referenceNumber={props.referenceNumber}
     />
   );
 }
