@@ -1,10 +1,5 @@
-import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
+import { CitizenReportsPage } from "@/components/reports/citizen-reports-page";
 
 export default function ReportsPage() {
-  return (
-    <DashboardPlaceholder
-      title="Citizen Reports"
-      description="Citizen-report review and triage will be implemented in later reporting phases."
-    />
-  );
+  return <CitizenReportsPage />;
 }

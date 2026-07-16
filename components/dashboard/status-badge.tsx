@@ -15,6 +15,10 @@ const STATUS_TONE: Record<string, Tone> = {
   offline: "critical",
   inactive: "neutral",
   // citizen reports
+  processing: "attention",
+  fallback: "attention",
+  failed: "critical",
+  low: "neutral",
   new: "neutral",
   needs_clarification: "attention",
   under_review: "neutral",

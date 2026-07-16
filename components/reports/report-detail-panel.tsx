@@ -1,0 +1,997 @@
+"use client";
+
+import type { Id } from "@/convex/_generated/dataModel";
+import { useMutation } from "convex/react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useState } from "react";
+
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { api } from "@/convex/_generated/api";
+
+import { getReportActionError } from "./report-error";
+import type { ReportDetail } from "./report-types";
+
+const ReportLocationMap = dynamic(
+  () => import("./report-location-map").then((m) => m.ReportLocationMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-muted h-full w-full animate-pulse rounded" />
+    ),
+  },
+);
+
+const time = (value: number | undefined) =>
+  value === undefined
+    ? "—"
+    : new Intl.DateTimeFormat("en-NG", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(value);
+
+type ActionState = { message: string | null; isRunning: boolean };
+type ReportCategory =
+  | "overflowing_waste"
+  | "illegal_dumpsite"
+  | "missed_collection"
+  | "drainage_blockage"
+  | "other";
+type Priority = "low" | "medium" | "high" | "critical";
+
+function useActionState() {
+  return useState<ActionState>({ message: null, isRunning: false });
+}
+
+function categoryLabel(cat: string | undefined) {
+  if (cat === undefined) return "None";
+  return cat
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function priorityLabel(p: string | undefined) {
+  return p === undefined ? "None" : p.charAt(0).toUpperCase() + p.slice(1);
+}
+
+export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
+  const r = detail.report;
+  const actionable = !["resolved", "duplicate", "rejected"].includes(r.status);
+  const coordinatesResolved =
+    r.latitude !== undefined &&
+    r.longitude !== undefined &&
+    r.locationResolutionStatus !== "pending" &&
+    r.locationResolutionStatus !== "failed";
+
+  return (
+    <div className="space-y-6">
+      {actionable && <ActionsSection detail={detail} />}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {r.referenceNumber} · {r.source} report
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Overview grid */}
+          <div className="grid gap-2 text-sm sm:grid-cols-2">
+            <p>
+              Status: <StatusBadge status={r.status} />
+            </p>
+            <p>
+              Source: <StatusBadge status={r.source} />
+            </p>
+            <p>
+              Category: {categoryLabel(r.category)} · Priority:{" "}
+              {priorityLabel(r.priority)}
+            </p>
+            {detail.classificationConfirmation && (
+              <p className="text-muted-foreground text-xs">
+                Classification confirmed{" "}
+                {time(detail.classificationConfirmation.confirmedAt)} by{" "}
+                {detail.classificationConfirmation.managerName}
+              </p>
+            )}
+            <p>
+              Location:{" "}
+              {r.resolvedLocationName ??
+                (r.latitude !== undefined
+                  ? `${Number(r.latitude).toFixed(5)}, ${Number(r.longitude!).toFixed(5)}`
+                  : "Not resolved")}
+            </p>
+            <p>
+              Resolution status:{" "}
+              <StatusBadge status={r.locationResolutionStatus ?? "pending"} />
+            </p>
+            {detail.linkedTask && (
+              <p>
+                Linked task:{" "}
+                <Link
+                  className="underline"
+                  href={`/dashboard/tasks?selected=${detail.linkedTask.id}`}
+                >
+                  {detail.linkedTask.displayId}
+                </Link>{" "}
+                ({detail.linkedTask.status})
+              </p>
+            )}
+            {detail.linkedBin && (
+              <p>
+                Linked bin:{" "}
+                <Link
+                  className="underline"
+                  href={`/dashboard/bins?selected=${detail.linkedBin.id}`}
+                >
+                  {detail.linkedBin.displayId}
+                </Link>{" "}
+                ({detail.linkedBin.name})
+              </p>
+            )}
+            {detail.duplicateOfReport && (
+              <p>
+                Duplicate of:{" "}
+                <Link
+                  className="underline"
+                  href={`/dashboard/reports?selected=${detail.duplicateOfReport.id}`}
+                >
+                  {detail.duplicateOfReport.referenceNumber}
+                </Link>
+              </p>
+            )}
+            <p>Submitted: {time(r.submittedAt)}</p>
+            {r.resolvedAt !== undefined && (
+              <p>Resolved: {time(r.resolvedAt)}</p>
+            )}
+          </div>
+
+          {/* Original message */}
+          {r.originalMessage && (
+            <section>
+              <h3 className="mb-1 font-medium">Original message</h3>
+              <p className="bg-muted rounded p-3 text-sm">
+                {r.originalMessage}
+              </p>
+            </section>
+          )}
+
+          <section className="grid gap-2 text-sm sm:grid-cols-2">
+            <p>Typed landmark: {r.landmarkText ?? "—"}</p>
+            <p>
+              Submitted GPS pin:{" "}
+              {r.submittedLatitude === undefined
+                ? "—"
+                : `${r.submittedLatitude.toFixed(5)}, ${r.submittedLongitude?.toFixed(5)}`}
+            </p>
+          </section>
+
+          <section>
+            <h3 className="mb-1 font-medium">AI-assisted assessment</h3>
+            <div className="grid gap-2 text-sm sm:grid-cols-2">
+              <p>
+                Operational classification: {categoryLabel(r.category)} ·{" "}
+                {priorityLabel(r.priority)}
+              </p>
+              <p>
+                Collection recommendation:{" "}
+                {r.requiresCollection === undefined
+                  ? "—"
+                  : r.requiresCollection
+                    ? "Collection recommended"
+                    : "Investigation recommended"}
+              </p>
+              <p>
+                AI clarification recommendation:{" "}
+                {r.aiNeedsClarification
+                  ? "Clarification recommended"
+                  : "No clarification recommended"}
+              </p>
+              <p>
+                Processing:{" "}
+                {r.aiStatus === "fallback" ? "Rules fallback" : r.aiStatus} ·{" "}
+                {r.aiModel ??
+                  (r.aiStatus === "fallback" ? "Rules fallback" : "—")}
+              </p>
+              <p>Processed: {time(r.aiProcessedAt)}</p>
+            </div>
+          </section>
+
+          {r.summary && (
+            <section>
+              <h3 className="mb-1 font-medium">AI summary</h3>
+              <p className="text-sm">{r.summary}</p>
+            </section>
+          )}
+
+          {/* Photo */}
+          {detail.photoUrl && (
+            <section>
+              <h3 className="mb-1 font-medium">Photo</h3>
+              {/* Convex storage URLs are authorized dynamically; this avoids adding remote image configuration. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={detail.photoUrl}
+                alt={`Report ${r.referenceNumber}`}
+                className="max-h-64 rounded object-contain"
+              />
+            </section>
+          )}
+
+          {/* Map */}
+          {coordinatesResolved &&
+            r.latitude !== undefined &&
+            r.longitude !== undefined && (
+              <section>
+                <div className="mb-1 flex items-center justify-between">
+                  <h3 className="font-medium">Location</h3>
+                  <Link
+                    className="text-sm underline"
+                    href={`/dashboard/map?type=report&selected=${r.id}`}
+                  >
+                    Open on map
+                  </Link>
+                </div>
+                <div className="h-64 w-full overflow-hidden rounded">
+                  <ReportLocationMap
+                    latitude={r.latitude}
+                    longitude={r.longitude}
+                    submittedLatitude={r.submittedLatitude}
+                    submittedLongitude={r.submittedLongitude}
+                    referenceNumber={r.referenceNumber}
+                  />
+                </div>
+              </section>
+            )}
+
+          <section>
+            <h3 className="mb-1 font-medium">Nearby possible duplicates</h3>
+            {detail.nearbyReports.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                No nearby candidates.
+              </p>
+            ) : (
+              <ul className="space-y-1 text-sm">
+                {detail.nearbyReports.map((candidate) => (
+                  <li key={candidate.id}>
+                    <Link
+                      className="underline"
+                      href={`/dashboard/reports?selected=${candidate.id}`}
+                    >
+                      {candidate.referenceNumber}
+                    </Link>{" "}
+                    · {Math.round(candidate.distanceMeters)}m ·{" "}
+                    {categoryLabel(candidate.category)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {detail.activityHistory.length > 0 && (
+            <section>
+              <h3 className="mb-1 font-medium">Activity history</h3>
+              <div className="max-h-64 space-y-1 overflow-y-auto text-sm">
+                {detail.activityHistory.map((event) => (
+                  <p key={event.id} className="text-muted-foreground">
+                    <span className="text-foreground">
+                      {time(event.eventTime)}
+                    </span>
+                    : {event.description}
+                    {event.actorName ? ` — ${event.actorName}` : ""}
+                  </p>
+                ))}
+              </div>
+            </section>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ─── Action forms ─────────────────────────────────────────────── */
+
+function ActionsSection({ detail }: { detail: ReportDetail }) {
+  const [activeForm, setActiveForm] = useState<string | null>(null);
+  const close = () => setActiveForm(null);
+
+  if (activeForm === null) {
+    return (
+      <Card>
+        <CardContent className="flex flex-wrap gap-2 pt-4">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setActiveForm("classification")}
+          >
+            Classification
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setActiveForm("coordinates")}
+          >
+            Update coordinates
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setActiveForm("clarification")}
+          >
+            Request info
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setActiveForm("create_task")}
+          >
+            Create task
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setActiveForm("link_task")}
+          >
+            Link task
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setActiveForm("duplicate")}
+          >
+            Mark duplicate
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setActiveForm("reject")}
+          >
+            Reject
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setActiveForm("resolve")}
+          >
+            Resolve
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  switch (activeForm) {
+    case "classification":
+      return (
+        <ClassificationForm
+          detail={detail}
+          key="classification"
+          onClose={close}
+        />
+      );
+    case "coordinates":
+      return (
+        <CoordinatesForm detail={detail} key="coordinates" onClose={close} />
+      );
+    case "clarification":
+      return (
+        <ClarificationForm
+          detail={detail}
+          key="clarification"
+          onClose={close}
+        />
+      );
+    case "create_task":
+      return (
+        <CreateTaskForm detail={detail} key="create_task" onClose={close} />
+      );
+    case "link_task":
+      return <LinkTaskForm detail={detail} key="link_task" onClose={close} />;
+    case "duplicate":
+      return <DuplicateForm detail={detail} key="duplicate" onClose={close} />;
+    case "reject":
+      return <RejectForm detail={detail} key="reject" onClose={close} />;
+    case "resolve":
+      return <ResolveForm detail={detail} key="resolve" onClose={close} />;
+    default:
+      return null;
+  }
+}
+
+/* ─── Classification ────────────────────────────────────────────── */
+
+function ClassificationForm({
+  detail,
+  onClose,
+}: {
+  detail: ReportDetail;
+  onClose: () => void;
+}) {
+  const confirm = useMutation(api.reportManagement.confirmClassification);
+  const update = useMutation(api.reportManagement.updateClassification);
+  const [category, setCategory] = useState<ReportCategory>(
+    detail.report.category ?? "overflowing_waste",
+  );
+  const [priority, setPriority] = useState<Priority>(
+    detail.report.priority ?? "medium",
+  );
+  const [state, setState] = useActionState();
+  const r = detail.report;
+
+  const run = async (
+    action: () => Promise<{ changed: boolean } | null>,
+    success: string,
+  ) => {
+    if (state.isRunning) return;
+    setState({ message: null, isRunning: true });
+    try {
+      const result = await action();
+      setState({
+        message: result?.changed === false ? "No changes needed." : success,
+        isRunning: false,
+      });
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+
+  const handleConfirm = () =>
+    run(() => confirm({ reportId: r.id }), "Classification confirmed.");
+
+  const handleUpdate = () =>
+    run(
+      () => update({ reportId: r.id, category: category, priority: priority }),
+      "Classification updated.",
+    );
+
+  const classificationDone = r.classificationConfirmedAt !== undefined;
+
+  return (
+    <ActionFormCard title="Classification" onClose={onClose}>
+      {state.message && (
+        <p className="mb-2 text-sm" role="status">
+          {state.message}
+        </p>
+      )}
+      <label className="block text-sm">
+        Category
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value as ReportCategory)}
+          className="bg-background mt-1 block w-full rounded border p-2"
+        >
+          <option value="overflowing_waste">Overflowing waste</option>
+          <option value="illegal_dumpsite">Illegal dumpsite</option>
+          <option value="missed_collection">Missed collection</option>
+          <option value="drainage_blockage">Drainage blockage</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <label className="mt-2 block text-sm">
+        Priority
+        <select
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as Priority)}
+          className="bg-background mt-1 block w-full rounded border p-2"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </label>
+      <div className="mt-3 flex gap-2">
+        {!classificationDone && (
+          <Button size="sm" disabled={state.isRunning} onClick={handleConfirm}>
+            {state.isRunning ? "Working…" : "Confirm"}
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={state.isRunning}
+          onClick={handleUpdate}
+        >
+          {state.isRunning ? "Working…" : "Save"}
+        </Button>
+      </div>
+    </ActionFormCard>
+  );
+}
+
+/* ─── Coordinates ───────────────────────────────────────────────── */
+
+function CoordinatesForm({
+  detail,
+  onClose,
+}: {
+  detail: ReportDetail;
+  onClose: () => void;
+}) {
+  const updateCoordinates = useMutation(
+    api.reportManagement.updateResolvedCoordinates,
+  );
+  const [lat, setLat] = useState(String(detail.report.latitude ?? ""));
+  const [lng, setLng] = useState(String(detail.report.longitude ?? ""));
+  const [state, setState] = useActionState();
+
+  const handleSubmit = async () => {
+    if (state.isRunning) return;
+    setState({ message: null, isRunning: true });
+    try {
+      await updateCoordinates({
+        reportId: detail.report.id,
+        latitude: Number(lat),
+        longitude: Number(lng),
+      });
+      setState({ message: "Coordinates updated.", isRunning: false });
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+
+  return (
+    <ActionFormCard title="Update resolved coordinates" onClose={onClose}>
+      {state.message && (
+        <p className="mb-2 text-sm" role="status">
+          {state.message}
+        </p>
+      )}
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="text-sm">
+          Latitude
+          <Input
+            type="number"
+            step="any"
+            value={lat}
+            onChange={(e) => setLat(e.target.value)}
+            required
+          />
+        </label>
+        <label className="text-sm">
+          Longitude
+          <Input
+            type="number"
+            step="any"
+            value={lng}
+            onChange={(e) => setLng(e.target.value)}
+            required
+          />
+        </label>
+      </div>
+      <Button
+        size="sm"
+        className="mt-3"
+        disabled={state.isRunning}
+        onClick={handleSubmit}
+      >
+        {state.isRunning ? "Saving…" : "Save coordinates"}
+      </Button>
+    </ActionFormCard>
+  );
+}
+
+/* ─── Clarification ─────────────────────────────────────────────── */
+
+function ClarificationForm({
+  detail,
+  onClose,
+}: {
+  detail: ReportDetail;
+  onClose: () => void;
+}) {
+  const requestInfo = useMutation(api.reportManagement.requestMoreInformation);
+  const [note, setNote] = useState("");
+  const [state, setState] = useActionState();
+
+  const handleSubmit = async () => {
+    if (state.isRunning) return;
+    setState({ message: null, isRunning: true });
+    try {
+      await requestInfo({ reportId: detail.report.id, note });
+      setState({ message: "Information requested.", isRunning: false });
+      setNote("");
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+
+  return (
+    <ActionFormCard title="Request more information" onClose={onClose}>
+      {state.message && (
+        <p className="mb-2 text-sm" role="status">
+          {state.message}
+        </p>
+      )}
+      <label className="block text-sm">
+        Note to citizen
+        <Input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="What additional information is needed?"
+          required
+        />
+      </label>
+      <Button
+        size="sm"
+        className="mt-3"
+        disabled={state.isRunning}
+        onClick={handleSubmit}
+      >
+        {state.isRunning ? "Sending…" : "Request"}
+      </Button>
+    </ActionFormCard>
+  );
+}
+
+/* ─── Create task ────────────────────────────────────────────────── */
+
+function CreateTaskForm({
+  detail,
+  onClose,
+}: {
+  detail: ReportDetail;
+  onClose: () => void;
+}) {
+  const createTask = useMutation(api.reportManagement.createCollectionTask);
+  const [priority, setPriority] = useState<Priority>("high");
+  const [reason, setReason] = useState("");
+  const [state, setState] = useActionState();
+
+  const handleSubmit = async () => {
+    if (state.isRunning) return;
+    setState({ message: null, isRunning: true });
+    try {
+      const result = await createTask({
+        reportId: detail.report.id,
+        priority: priority,
+        reason,
+      });
+      setState({
+        message: `Task ${result.displayId} created.`,
+        isRunning: false,
+      });
+      setReason("");
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+
+  return (
+    <ActionFormCard title="Create collection task" onClose={onClose}>
+      {state.message && (
+        <p className="mb-2 text-sm" role="status">
+          {state.message}
+        </p>
+      )}
+      <label className="block text-sm">
+        Priority
+        <select
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as Priority)}
+          className="bg-background mt-1 block w-full rounded border p-2"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </label>
+      <label className="mt-2 block text-sm">
+        Reason
+        <Input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Why is collection needed?"
+          required
+        />
+      </label>
+      <Button
+        size="sm"
+        className="mt-3"
+        disabled={state.isRunning}
+        onClick={handleSubmit}
+      >
+        {state.isRunning ? "Creating…" : "Create task"}
+      </Button>
+    </ActionFormCard>
+  );
+}
+
+/* ─── Link existing task ──────────────────────────────────────────── */
+
+function LinkTaskForm({
+  detail,
+  onClose,
+}: {
+  detail: ReportDetail;
+  onClose: () => void;
+}) {
+  const linkTask = useMutation(api.reportManagement.linkExistingTask);
+  const [taskId, setTaskId] = useState<Id<"collectionTasks"> | "">("");
+  const [state, setState] = useActionState();
+
+  const handleSubmit = async () => {
+    if (state.isRunning || !taskId) return;
+    setState({ message: null, isRunning: true });
+    try {
+      await linkTask({ reportId: detail.report.id, taskId: taskId });
+      setState({ message: "Task linked.", isRunning: false });
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+
+  const eligible = detail.eligibleTasks;
+
+  return (
+    <ActionFormCard title="Link existing task" onClose={onClose}>
+      {state.message && (
+        <p className="mb-2 text-sm" role="status">
+          {state.message}
+        </p>
+      )}
+      {eligible.length === 0 ? (
+        <p className="text-muted-foreground text-sm">
+          No eligible active tasks.
+        </p>
+      ) : (
+        <>
+          <label className="block text-sm">
+            Select task
+            <select
+              value={taskId}
+              onChange={(e) =>
+                setTaskId(e.target.value as Id<"collectionTasks">)
+              }
+              className="bg-background mt-1 block w-full rounded border p-2"
+            >
+              <option value="">— Select a task —</option>
+              {eligible.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.displayId} ({t.status}, {t.priority})
+                  {t.distanceMeters !== null
+                    ? ` · ${Math.round(t.distanceMeters)}m`
+                    : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button
+            size="sm"
+            className="mt-3"
+            disabled={state.isRunning || !taskId}
+            onClick={handleSubmit}
+          >
+            {state.isRunning ? "Linking…" : "Link task"}
+          </Button>
+        </>
+      )}
+    </ActionFormCard>
+  );
+}
+
+/* ─── Mark duplicate ─────────────────────────────────────────────── */
+
+function DuplicateForm({
+  detail,
+  onClose,
+}: {
+  detail: ReportDetail;
+  onClose: () => void;
+}) {
+  const markDup = useMutation(api.reportManagement.markDuplicate);
+  const [targetId, setTargetId] = useState<Id<"citizenReports"> | "">("");
+  const [state, setState] = useActionState();
+
+  const handleSubmit = async () => {
+    if (
+      state.isRunning ||
+      !targetId ||
+      !window.confirm("Mark this report as a duplicate? This cannot be undone.")
+    )
+      return;
+    setState({ message: null, isRunning: true });
+    try {
+      await markDup({
+        reportId: detail.report.id,
+        duplicateOfReportId: targetId,
+      });
+      setState({ message: "Marked as duplicate.", isRunning: false });
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+
+  const nearby = detail.nearbyReports;
+
+  return (
+    <ActionFormCard title="Mark as duplicate" onClose={onClose}>
+      {state.message && (
+        <p className="mb-2 text-sm" role="status">
+          {state.message}
+        </p>
+      )}
+      {nearby.length === 0 ? (
+        <p className="text-muted-foreground text-sm">
+          No nearby open reports to mark as canonical.
+        </p>
+      ) : (
+        <>
+          <label className="block text-sm">
+            Canonical report
+            <select
+              value={targetId}
+              onChange={(e) =>
+                setTargetId(e.target.value as Id<"citizenReports">)
+              }
+              className="bg-background mt-1 block w-full rounded border p-2"
+            >
+              <option value="">— Select canonical report —</option>
+              {nearby.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.referenceNumber} ({categoryLabel(n.category)},{" "}
+                  {priorityLabel(n.priority)}) · {Math.round(n.distanceMeters)}m
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button
+            size="sm"
+            className="mt-3"
+            disabled={state.isRunning || !targetId}
+            onClick={handleSubmit}
+          >
+            {state.isRunning ? "Marking…" : "Mark duplicate"}
+          </Button>
+        </>
+      )}
+    </ActionFormCard>
+  );
+}
+
+/* ─── Reject ─────────────────────────────────────────────────────── */
+
+function RejectForm({
+  detail,
+  onClose,
+}: {
+  detail: ReportDetail;
+  onClose: () => void;
+}) {
+  const reject = useMutation(api.reportManagement.rejectReport);
+  const [reason, setReason] = useState("");
+  const [state, setState] = useActionState();
+
+  const handleSubmit = async () => {
+    if (
+      state.isRunning ||
+      !window.confirm("Reject this report? This cannot be undone.")
+    )
+      return;
+    setState({ message: null, isRunning: true });
+    try {
+      await reject({ reportId: detail.report.id, reason });
+      setState({ message: "Report rejected.", isRunning: false });
+      setReason("");
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+
+  return (
+    <ActionFormCard title="Reject report" onClose={onClose}>
+      {state.message && (
+        <p className="mb-2 text-sm" role="status">
+          {state.message}
+        </p>
+      )}
+      <label className="block text-sm">
+        Rejection reason
+        <Input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Why is this report being rejected?"
+          required
+        />
+      </label>
+      <Button
+        size="sm"
+        className="mt-3"
+        variant="destructive"
+        disabled={state.isRunning}
+        onClick={handleSubmit}
+      >
+        {state.isRunning ? "Rejecting…" : "Reject report"}
+      </Button>
+    </ActionFormCard>
+  );
+}
+
+/* ─── Resolve ────────────────────────────────────────────────────── */
+
+function ResolveForm({
+  detail,
+  onClose,
+}: {
+  detail: ReportDetail;
+  onClose: () => void;
+}) {
+  const resolve = useMutation(api.reportManagement.resolveReport);
+  const [note, setNote] = useState("");
+  const [state, setState] = useActionState();
+
+  const handleSubmit = async () => {
+    if (
+      state.isRunning ||
+      !window.confirm("Resolve this report? This cannot be undone.")
+    )
+      return;
+    setState({ message: null, isRunning: true });
+    try {
+      await resolve({
+        reportId: detail.report.id,
+        ...(note.trim() ? { note } : {}),
+      });
+      setState({ message: "Report resolved.", isRunning: false });
+      setNote("");
+    } catch (error) {
+      setState({ message: getReportActionError(error), isRunning: false });
+    }
+  };
+
+  return (
+    <ActionFormCard title="Resolve report" onClose={onClose}>
+      {state.message && (
+        <p className="mb-2 text-sm" role="status">
+          {state.message}
+        </p>
+      )}
+      <label className="block text-sm">
+        Resolution note (optional)
+        <Input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Optional resolution note"
+        />
+      </label>
+      <Button
+        size="sm"
+        className="mt-3"
+        disabled={state.isRunning}
+        onClick={handleSubmit}
+      >
+        {state.isRunning ? "Resolving…" : "Resolve report"}
+      </Button>
+    </ActionFormCard>
+  );
+}
+
+/* ─── Shared form card ───────────────────────────────────────────── */
+
+function ActionFormCard({
+  title,
+  children,
+  onClose,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <Card>
+      <CardContent className="space-y-2 pt-4">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-medium">{title}</h3>
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+        {children}
+      </CardContent>
+    </Card>
+  );
+}

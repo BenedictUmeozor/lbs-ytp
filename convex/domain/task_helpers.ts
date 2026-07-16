@@ -1,4 +1,4 @@
-import type { Id } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 import type { Priority } from "./validators";
 import { insertActivityEvent } from "./write_helpers";
@@ -28,6 +28,12 @@ async function nextDisplayId(ctx: MutationCtx): Promise<string> {
     return match === null ? value : Math.max(value, Number(match[1]));
   }, 0);
   return `CT-${String(highest + 1).padStart(3, "0")}`;
+}
+
+export async function nextCollectionTaskDisplayId(
+  ctx: MutationCtx,
+): Promise<string> {
+  return nextDisplayId(ctx);
 }
 
 export async function createTaskForBin(
@@ -67,4 +73,32 @@ export async function createTaskForBin(
     args.actorUserId,
   );
   return { task, created: true };
+}
+
+export async function createTaskForReport(
+  ctx: MutationCtx,
+  args: {
+    reportId: Id<"citizenReports">;
+    priority: Priority;
+    reason: string;
+    latitude: number;
+    longitude: number;
+    now: number;
+  },
+): Promise<Doc<"collectionTasks">> {
+  const taskId = await ctx.db.insert("collectionTasks", {
+    displayId: await nextDisplayId(ctx),
+    sourceType: "citizen_report",
+    sourceReportId: args.reportId,
+    linkedReportIds: [args.reportId],
+    latitude: args.latitude,
+    longitude: args.longitude,
+    priority: args.priority,
+    reason: args.reason,
+    status: "pending",
+    statusUpdatedAt: args.now,
+  });
+  const task = await ctx.db.get(taskId);
+  if (task === null) throw new Error("Task creation failed.");
+  return task;
 }

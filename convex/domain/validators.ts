@@ -197,6 +197,10 @@ export const activityEventTypeValidator = v.union(
   v.literal("device_inactive"),
   v.literal("bin_details_updated"),
   v.literal("emptying_confirmed"),
+  v.literal("report_classification_confirmed"),
+  v.literal("report_classification_updated"),
+  v.literal("report_location_updated"),
+  v.literal("report_linked_to_task"),
 );
 export type ActivityEventType = Infer<typeof activityEventTypeValidator>;
 

@@ -899,6 +899,12 @@ Residents do not require authentication. Phase 5 stores the original report, bro
 
 Processing starts asynchronously only after a report is stored. Browser coordinates take priority, must be within the Bariga pilot, and are never reverse geocoded. Typed landmarks use cached, throttled Nominatim searches with an eight-second timeout; definitive no-result and unusable-result responses are cached. An AI-extracted location never overrides a vague explicit location. Gemini 3.1 Flash-Lite performs validated structured triage with a fifteen-second timeout per attempt, with deterministic local rules when Gemini is unavailable. Attempt-versioned processing has scheduled stale-action recovery and at most three total attempts, so stale actions cannot apply results. Successful location resolution survives AI fallback. All operational map views, including Overview, show only valid provided coordinates, successfully resolved coordinates, or compatible completed/fallback legacy seeded reports; reports needing clarification do not become markers merely because original coordinates are preserved. Phase 6 creates no collection task: Phase 8 owns automatic task creation, and Phase 7 fleet managers can edit AI output. Public tracking never exposes internal AI, model, priority, resolution, or location details.
 
+### Phase 7 fleet-manager report management
+
+Dashboard category and priority are operational values initially recommended by Gemini or the rules fallback. Fleet managers may confirm or edit them without changing the original resident message or AI summary. Original resident messages and submitted GPS pins remain immutable; coordinate corrections change only the current operational coordinates and do not re-geocode.
+
+Possible duplicates are geographic-distance suggestions requiring manager review; records are never merged automatically. Phase 7 permits only manual collection-task creation and manual linking. Phase 8 owns automatic task creation and task-to-report completion synchronisation. Requesting more information changes the report status only until WhatsApp messaging is implemented. Gemini reasoning, prompts and raw responses are never displayed.
+
 ### Optional report photos
 
 Optional report photos use Convex File Storage. Only JPEG, PNG and WebP are accepted, with a maximum size of 5 MiB. The application stores only the Convex storage ID. Public submitted and tracking views never include a photo, storage ID or file URL. Authorized direct URLs are controlled-MVP bearer URLs, not strict per-request authorization.

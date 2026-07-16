@@ -196,6 +196,8 @@ export const submitWebReport = mutation({
       landmarkText: hasCoordinates ? undefined : landmarkText,
       latitude: hasCoordinates ? latitude : undefined,
       longitude: hasCoordinates ? longitude : undefined,
+      submittedLatitude: hasCoordinates ? latitude : undefined,
+      submittedLongitude: hasCoordinates ? longitude : undefined,
       photoStorageId: args.photoStorageId,
       aiStatus: "pending",
       status: "new",

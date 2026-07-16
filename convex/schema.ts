@@ -92,9 +92,16 @@ export default defineSchema({
     aiProcessedAt: v.optional(v.number()),
     latitude: v.optional(v.number()),
     longitude: v.optional(v.number()),
+    submittedLatitude: v.optional(v.number()),
+    submittedLongitude: v.optional(v.number()),
     photoStorageId: v.optional(v.id("_storage")),
     requiresCollection: v.optional(v.boolean()),
     needsClarification: v.optional(v.boolean()),
+    aiNeedsClarification: v.optional(v.boolean()),
+    classificationConfirmedAt: v.optional(v.number()),
+    classificationConfirmedByUserId: v.optional(v.id("users")),
+    duplicateOfReportId: v.optional(v.id("citizenReports")),
+
     aiStatus: aiStatusValidator,
     status: reportStatusValidator,
     statusUpdatedAt: v.number(),
@@ -107,6 +114,7 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_priority", ["priority"])
     .index("by_source", ["source"])
+    .index("by_duplicateOfReportId", ["duplicateOfReportId"])
     .index("by_linkedTaskId", ["linkedTaskId"])
     .index("by_linkedBinId", ["linkedBinId"]),
 

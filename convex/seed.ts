@@ -255,8 +255,15 @@ async function insertDemoDataset(
       landmarkText: report.landmarkText,
       latitude: report.latitude,
       longitude: report.longitude,
+      submittedLatitude: report.submittedCoordinates
+        ? report.latitude
+        : undefined,
+      submittedLongitude: report.submittedCoordinates
+        ? report.longitude
+        : undefined,
       requiresCollection: report.requiresCollection,
       needsClarification: report.needsClarification,
+      aiNeedsClarification: report.needsClarification,
       aiStatus: report.aiStatus,
       status: report.status,
       statusUpdatedAt:

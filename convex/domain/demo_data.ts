@@ -257,6 +257,7 @@ type DemoReport = {
   landmarkText: string;
   latitude?: number;
   longitude?: number;
+  submittedCoordinates?: boolean;
   requiresCollection: boolean;
   needsClarification: boolean;
   aiStatus: AiStatus;
@@ -278,6 +279,7 @@ export const demoReports: readonly DemoReport[] = [
     landmarkText: "Bariga Market",
     latitude: 6.5369,
     longitude: 3.3872,
+    submittedCoordinates: true,
     requiresCollection: true,
     needsClarification: false,
     aiStatus: "completed",
@@ -314,6 +316,7 @@ export const demoReports: readonly DemoReport[] = [
     landmarkText: "Pedro Bus Stop",
     latitude: 6.536,
     longitude: 3.394,
+    submittedCoordinates: true,
     requiresCollection: false,
     needsClarification: false,
     aiStatus: "completed",

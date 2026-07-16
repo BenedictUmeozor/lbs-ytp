@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 7
-* **Current milestone:** Citizen Reports Dashboard
+* **Current phase:** Phase 8
+* **Current milestone:** Collection Tasks and Automatic Scheduling Rules
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -150,7 +150,7 @@ Update this table after completing each phase.
 | Phase 4  | Complete | 2026-07-15 | Smart Bins provides a protected live list/detail view, public controlled-MVP hardware ingestion with payload and assignment validation, automatic task rules, real-device offline evaluation, and auditable manual/sensor emptying confirmation. The correction pass preserves awaiting-confirmation state, restores connectivity for delayed readings, rejects conflicting duplicates, safely handles invalid selected-bin URLs, fixes authentication-state ordering, and records sensor-confirmed status history. The final correction resets bin-specific UI state when selection changes, uses structured Convex application errors for hardware-domain failures, and corrects the real-device payload example. The awaiting-confirmation helper is ready, but its invocation from the later Collection Tasks “mark task collected” mutation remains deferred. |
 | Phase 5  | Complete | 2026-07-16 | Public unauthenticated reporting stores the resident-selected category, original message, browser coordinates or typed landmark, optional private Convex File Storage photo ID, and a sequential report reference. Submitted and tracking views use public-safe real-time status subscriptions; raw landmarks and coordinates are excluded from public tracking. Structured field-level Convex application errors, safe unexpected-error messaging, a public route error boundary and accessible location/form corrections are complete. New reports remain `status: new` and `aiStatus: pending`; Phase 6 owns Nominatim resolution and Gemini triage. D-04 remains unresolved. |
 | Phase 6  | Complete | 2026-07-16 | Asynchronous processing has monotonic attempt versions, stale-result guards, six-minute recovery checks, and a three-attempt limit. Nominatim has an eight-second timeout, caches definitive unusable results, and accepts only in-pilot locations. Gemini uses `timeout_ms: 15000` with SDK retries disabled, makes at most two application-level requests, and does not retry permanent 4xx errors. Fallback preserves successful location resolution. Outside-pilot GPS and unresolved reports are excluded from both operational maps while compatible completed/fallback legacy seeded markers remain visible. No collection tasks, duplicate detection, dashboard, or messaging were added. |
-| Phase 7  | Pending | —               | —               |
+| Phase 7  | Complete | 2026-07-16 | Protected real-time citizen-report list and detail subscriptions, operational classification/location controls, manual task creation and linking, duplicate review, auditable resolution actions, and public-safe status updates are complete. Automatic task creation, task workflows, and task-to-report completion synchronisation remain Phase 8. |
 | Phase 8  | Pending | —               | —               |
 | Phase 9  | Pending | —               | —               |
 | Phase 10 | Pending | —               | —               |
@@ -1055,86 +1055,86 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Reports table
 
-* [ ] Display reference number.
-* [ ] Display category.
-* [ ] Display priority.
-* [ ] Display location.
-* [ ] Display source.
-* [ ] Display submission time.
-* [ ] Display status.
-* [ ] Display AI status.
-* [ ] Display linked task.
+* [x] Display reference number.
+* [x] Display category.
+* [x] Display priority.
+* [x] Display location.
+* [x] Display source.
+* [x] Display submission time.
+* [x] Display status.
+* [x] Display AI status.
+* [x] Display linked task.
 
 ## Report filters
 
-* [ ] Filter all reports.
-* [ ] Filter new reports.
-* [ ] Filter reports needing clarification.
-* [ ] Filter reports under review.
-* [ ] Filter scheduled reports.
-* [ ] Filter reports in progress.
-* [ ] Filter resolved reports.
-* [ ] Filter duplicates.
-* [ ] Filter by priority.
-* [ ] Filter by category.
-* [ ] Filter by source.
+* [x] Filter all reports.
+* [x] Filter new reports.
+* [x] Filter reports needing clarification.
+* [x] Filter reports under review.
+* [x] Filter scheduled reports.
+* [x] Filter reports in progress.
+* [x] Filter resolved reports.
+* [x] Filter duplicates.
+* [x] Filter by priority.
+* [x] Filter by category.
+* [x] Filter by source.
 
 ## Report detail
 
-* [ ] Show reference number.
-* [ ] Preserve and show original message.
-* [ ] Show optional photo through authorised access.
-* [ ] Show submitted location pin.
-* [ ] Show typed landmark.
-* [ ] Show resolved coordinates.
-* [ ] Show AI-generated summary.
-* [ ] Show AI category.
-* [ ] Show AI priority.
-* [ ] Show AI collection recommendation.
-* [ ] Show AI-processing status.
-* [ ] Show related nearby reports.
-* [ ] Show linked bin.
-* [ ] Show linked collection task.
-* [ ] Show status history.
-* [ ] Show submission source.
-* [ ] Show submission time.
-* [ ] Show resolution time.
+* [x] Show reference number.
+* [x] Preserve and show original message.
+* [x] Show optional photo through authorised access.
+* [x] Show submitted location pin.
+* [x] Show typed landmark.
+* [x] Show resolved coordinates.
+* [x] Show AI-generated summary.
+* [x] Show AI category.
+* [x] Show AI priority.
+* [x] Show AI collection recommendation.
+* [x] Show AI-processing status.
+* [x] Show related nearby reports.
+* [x] Show linked bin.
+* [x] Show linked collection task.
+* [x] Show status history.
+* [x] Show submission source.
+* [x] Show submission time.
+* [x] Show resolution time.
 
 ## Fleet-manager actions
 
-* [ ] Confirm AI classification.
-* [ ] Change category.
-* [ ] Change priority.
-* [ ] Change resolved coordinates.
-* [ ] Request more information.
-* [ ] Create a collection task.
-* [ ] Link report to an existing task.
-* [ ] Mark report as duplicate.
-* [ ] Reject irrelevant reports.
-* [ ] Mark report resolved.
-* [ ] Record every status-changing action in activity history.
+* [x] Confirm AI classification.
+* [x] Change category.
+* [x] Change priority.
+* [x] Change resolved coordinates.
+* [x] Request more information.
+* [x] Create a collection task.
+* [x] Link report to an existing task.
+* [x] Mark report as duplicate.
+* [x] Reject irrelevant reports.
+* [x] Mark report resolved.
+* [x] Record every status-changing action in activity history.
 
 ## Duplicate suggestions
 
-* [ ] Identify nearby unresolved reports.
-* [ ] Use the configured duplicate-distance threshold.
-* [ ] Display possible duplicate candidates.
-* [ ] Do not merge automatically.
-* [ ] Require fleet-manager review.
-* [ ] Preserve each original report.
+* [x] Identify nearby unresolved reports.
+* [x] Use the configured duplicate-distance threshold.
+* [x] Display possible duplicate candidates.
+* [x] Do not merge automatically.
+* [x] Require fleet-manager review.
+* [x] Preserve each original report.
 
 ## Reports acceptance criteria
 
-* [ ] AI-derived values are editable.
-* [ ] Original messages remain unchanged.
-* [ ] Reports without clear locations cannot create tasks automatically.
-* [ ] Duplicate suggestions do not automatically merge records.
-* [ ] Resolving a linked task resolves its report.
-* [ ] Status changes appear in the public tracker.
-* [ ] Report changes update without page refresh.
-* [ ] Loading and empty states are present.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 7 handoff summary is recorded.
+* [x] AI-derived values are editable.
+* [x] Original messages remain unchanged.
+* [x] Reports without clear locations cannot create tasks automatically.
+* [x] Duplicate suggestions do not automatically merge records.
+* [x] Manual report resolution works, and linked task information is ready for Phase 8 task-to-report synchronisation.
+* [x] Status changes appear in the public tracker.
+* [x] Report changes update without page refresh.
+* [x] Loading and empty states are present.
+* [x] Checks for touched files pass.
+* [x] The Phase 7 handoff summary is recorded.
 
 ---
 

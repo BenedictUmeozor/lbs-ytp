@@ -252,6 +252,7 @@ export const applyReportProcessingResult = internalMutation({
       aiExtractedLocationText: args.aiExtractedLocationText,
       requiresCollection: args.requiresCollection,
       needsClarification,
+      aiNeedsClarification: args.aiNeedsClarification,
       aiStatus: args.aiSource === "gemini" ? "completed" : "fallback",
       aiProcessedAt: args.processedAt,
       aiProcessingStartedAt: undefined,
