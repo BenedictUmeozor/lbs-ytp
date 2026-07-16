@@ -7,6 +7,7 @@ import {
   binStatusValidator,
   dataSourceValidator,
   deviceStatusValidator,
+  locationResolutionStatusValidator,
   maintenanceRiskValidator,
   notificationSeverityValidator,
   notificationTypeValidator,
@@ -82,6 +83,12 @@ export default defineSchema({
     priority: v.optional(priorityValidator),
     summary: v.optional(v.string()),
     landmarkText: v.optional(v.string()),
+    locationResolutionStatus: v.optional(locationResolutionStatusValidator),
+    resolvedLocationName: v.optional(v.string()),
+    aiExtractedLocationText: v.optional(v.string()),
+    aiModel: v.optional(v.string()),
+    aiProcessingStartedAt: v.optional(v.number()),
+    aiProcessedAt: v.optional(v.number()),
     latitude: v.optional(v.number()),
     longitude: v.optional(v.number()),
     photoStorageId: v.optional(v.id("_storage")),
@@ -101,6 +108,22 @@ export default defineSchema({
     .index("by_source", ["source"])
     .index("by_linkedTaskId", ["linkedTaskId"])
     .index("by_linkedBinId", ["linkedBinId"]),
+
+  geocodingCache: defineTable({
+    normalizedQuery: v.string(),
+    submittedQuery: v.string(),
+    found: v.boolean(),
+    latitude: v.optional(v.number()),
+    longitude: v.optional(v.number()),
+    displayName: v.optional(v.string()),
+    createdAt: v.number(),
+    lastUsedAt: v.number(),
+  }).index("by_normalizedQuery", ["normalizedQuery"]),
+
+  externalServiceThrottles: defineTable({
+    service: v.string(),
+    nextAllowedAt: v.number(),
+  }).index("by_service", ["service"]),
 
   whatsappConversations: defineTable({
     whatsappUserId: v.string(),

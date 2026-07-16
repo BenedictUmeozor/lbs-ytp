@@ -57,6 +57,17 @@ export const aiStatusValidator = v.union(
 );
 export type AiStatus = Infer<typeof aiStatusValidator>;
 
+export const locationResolutionStatusValidator = v.union(
+  v.literal("pending"),
+  v.literal("provided_coordinates"),
+  v.literal("resolved"),
+  v.literal("needs_clarification"),
+  v.literal("failed"),
+);
+export type LocationResolutionStatus = Infer<
+  typeof locationResolutionStatusValidator
+>;
+
 export const reportStatusValidator = v.union(
   v.literal("new"),
   v.literal("needs_clarification"),

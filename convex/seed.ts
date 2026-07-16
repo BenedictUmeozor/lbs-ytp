@@ -20,6 +20,8 @@ import {
 
 const MVP_TABLES = [
   "activityEvents",
+  "externalServiceThrottles",
+  "geocodingCache",
   "notifications",
   "maintenanceAlerts",
   "routeStops",
@@ -83,6 +85,10 @@ async function getDatasetCounts(ctx: MutationCtx): Promise<DatasetCounts> {
       .length,
     notifications: (await ctx.db.query("notifications").collect()).length,
     activityEvents: (await ctx.db.query("activityEvents").collect()).length,
+    geocodingCache: (await ctx.db.query("geocodingCache").collect()).length,
+    externalServiceThrottles: (
+      await ctx.db.query("externalServiceThrottles").collect()
+    ).length,
     settings: (await ctx.db.query("settings").collect()).length,
   };
 }
@@ -521,6 +527,8 @@ const datasetCountsValidator = v.object({
   maintenanceAlerts: v.number(),
   notifications: v.number(),
   activityEvents: v.number(),
+  geocodingCache: v.number(),
+  externalServiceThrottles: v.number(),
   settings: v.number(),
 });
 

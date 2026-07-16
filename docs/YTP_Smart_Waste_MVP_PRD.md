@@ -895,6 +895,10 @@ At least one is required:
 
 Residents do not require authentication. Phase 5 stores the original report, browser coordinates or the exact typed landmark, and `aiStatus: pending`; it does not resolve landmarks, reverse geocode, call Gemini, prioritise reports, detect duplicates, or create tasks. Detailed submitted locations remain private operational data for future protected fleet-manager operations. Phase 6 owns Nominatim resolution and AI-assisted triage.
 
+### Phase 6 processing boundary
+
+Processing starts asynchronously only after a report is stored. Browser coordinates take priority and are never reverse geocoded. Typed landmarks use cached, throttled Nominatim searches; an AI-extracted location never overrides a vague explicit location. Gemini 3.1 Flash-Lite performs validated structured triage, with deterministic local rules when Gemini is unavailable. Phase 6 creates no collection task: Phase 8 owns automatic task creation, and Phase 7 fleet managers can edit AI output. Public tracking never exposes internal AI, model, priority, resolution, or location details.
+
 ### Optional report photos
 
 Optional report photos use Convex File Storage. Only JPEG, PNG and WebP are accepted, with a maximum size of 5 MiB. The application stores only the Convex storage ID. Public submitted and tracking views never include a photo, storage ID or file URL. Authorized direct URLs are controlled-MVP bearer URLs, not strict per-request authorization.

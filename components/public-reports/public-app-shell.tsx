@@ -38,6 +38,17 @@ export function PublicAppShell({ children }: { children: React.ReactNode }) {
       <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         {children}
       </main>
+      <footer className="border-t border-emerald-950/10 px-4 py-4 text-center text-xs text-stone-600 sm:px-6">
+        Location search data ©{" "}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noreferrer"
+          className="underline underline-offset-2 hover:text-emerald-950"
+        >
+          OpenStreetMap contributors
+        </a>
+      </footer>
     </div>
   );
 }

@@ -46,6 +46,10 @@ Set these server-side variables in the Convex deployment environment, not as `NE
 ```bash
 CLERK_JWT_ISSUER_DOMAIN=
 DEMO_FLEET_MANAGER_EMAIL=
+GEMINI_API_KEY=
+NOMINATIM_BASE_URL=https://nominatim.openstreetmap.org
+
+`GEMINI_API_KEY` and `NOMINATIM_BASE_URL` must be configured in the Convex deployment environment. Do not put either value in a `NEXT_PUBLIC_` variable; never log or commit the Gemini key.
 ```
 
 After setting the Convex deployment variables and enabling Clerk's Convex integration, regenerate and deploy the Convex configuration:

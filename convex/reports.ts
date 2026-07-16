@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 
+import { internal } from "./_generated/api";
 import { internalQuery, mutation, query } from "./_generated/server";
 import {
   getNextReportReference,
@@ -208,6 +209,9 @@ export const submitWebReport = mutation({
       "citizen_report",
       reportId,
     );
+    await ctx.scheduler.runAfter(0, internal.reportProcessing.processReport, {
+      reportId,
+    });
 
     return {
       referenceNumber,

@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 6
-* **Current milestone:** Location Resolution and AI-Assisted Triage
+* **Current phase:** Phase 7
+* **Current milestone:** Citizen Reports Dashboard
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -118,11 +118,11 @@ The coding agent must not resolve these decisions independently.
 
 ### D-04 — Gemini configuration
 
-* [ ] Choose the Gemini model used for structured triage.
-* [ ] Confirm the server-side environment variable name.
-* [ ] Confirm the response schema and retry behaviour.
+* [x] Choose the Gemini model used for structured triage.
+* [x] Confirm the server-side environment variable name.
+* [x] Confirm the response schema and retry behaviour.
 * **Required before:** Phase 6
-* **Status:** Pending owner decision
+* **Status:** Approved — [D-04](decisions/D-04_GEMINI_CONFIGURATION.md).
 
 ### D-05 — WhatsApp test integration
 
@@ -149,7 +149,7 @@ Update this table after completing each phase.
 | Phase 3  | Complete | 2026-07-15 | Dedicated protected map query with live Convex subscriptions, an interactive Leaflet map, bins/reports/trucks/depot/route layers, filters and search, live selected-item details, a keyboard-accessible operational list, and read-only active-route rendering. Route re-optimisation remains Phase 9; stop completion remains Phase 10. |
 | Phase 4  | Complete | 2026-07-15 | Smart Bins provides a protected live list/detail view, public controlled-MVP hardware ingestion with payload and assignment validation, automatic task rules, real-device offline evaluation, and auditable manual/sensor emptying confirmation. The correction pass preserves awaiting-confirmation state, restores connectivity for delayed readings, rejects conflicting duplicates, safely handles invalid selected-bin URLs, fixes authentication-state ordering, and records sensor-confirmed status history. The final correction resets bin-specific UI state when selection changes, uses structured Convex application errors for hardware-domain failures, and corrects the real-device payload example. The awaiting-confirmation helper is ready, but its invocation from the later Collection Tasks “mark task collected” mutation remains deferred. |
 | Phase 5  | Complete | 2026-07-16 | Public unauthenticated reporting stores the resident-selected category, original message, browser coordinates or typed landmark, optional private Convex File Storage photo ID, and a sequential report reference. Submitted and tracking views use public-safe real-time status subscriptions; raw landmarks and coordinates are excluded from public tracking. Structured field-level Convex application errors, safe unexpected-error messaging, a public route error boundary and accessible location/form corrections are complete. New reports remain `status: new` and `aiStatus: pending`; Phase 6 owns Nominatim resolution and Gemini triage. D-04 remains unresolved. |
-| Phase 6  | Pending | —               | —               |
+| Phase 6  | Complete | 2026-07-16 | Asynchronous report processing now claims new reports after storage, bypasses Nominatim for browser coordinates, and resolves clear typed landmarks through a cached, cross-action-throttled Nominatim search. Vague, unresolved, and temporarily failed locations require clarification without invented coordinates. Server-only Gemini 3.1 Flash-Lite structured triage is runtime validated with a deterministic fallback. Internal results safely update existing public subscriptions, while public tracking remains private-data free. No collection tasks, duplicate detection, dashboard, or messaging were added. Demo reset clears geocoding cache and throttle state. |
 | Phase 7  | Pending | —               | —               |
 | Phase 8  | Pending | —               | —               |
 | Phase 9  | Pending | —               | —               |
@@ -995,111 +995,18 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 # Phase 6 — Location Resolution and AI-Assisted Triage
 
-## Decision dependency
-
-* [ ] Decision D-04 has been resolved.
-
-## Location priority
-
-* [ ] Prefer shared GPS coordinates.
-* [ ] Prefer browser GPS coordinates when shared GPS is unavailable.
-* [ ] Resolve typed landmarks through Nominatim.
-* [ ] Request clarification when no acceptable location exists.
-* [ ] Never place a random marker for a vague location.
-
-## Nominatim geocoding
-
-* [ ] Send landmarks with Lagos and Nigeria context.
-* [ ] Resolve acceptable results to coordinates.
-* [ ] Store the original landmark.
-* [ ] Store resolved coordinates.
-* [ ] Reuse stored coordinates after resolution.
-* [ ] Cache repeated geocoding results.
-* [ ] Throttle Nominatim requests.
-* [ ] Use an appropriate identifying request header where required.
-* [ ] Display OpenStreetMap attribution.
-
-## Vague and failed locations
-
-* [ ] Reject “Bariga” alone as insufficient.
-* [ ] Reject “Lagos” alone as insufficient.
-* [ ] Reject “around my area” as insufficient.
-* [ ] Reject “near the road” as insufficient.
-* [ ] Request a location pin, landmark, street, bus stop or recognised place.
-* [ ] Set failed geocoding reports to Needs clarification.
-* [ ] Do not automatically create tasks without valid coordinates.
-* [ ] Keep failed reports visible to the fleet manager.
-* [ ] Preserve the original report during clarification.
-
-## Gemini triage
-
-* [ ] Call Gemini only from server-side code.
-* [ ] Send only required report text.
-* [ ] Do not send phone numbers.
-* [ ] Do not send unnecessary personal information.
-* [ ] Require structured output.
-* [ ] Validate Gemini output before storing it.
-* [ ] Classify report category.
-* [ ] Assign report priority.
-* [ ] Extract location text.
-* [ ] Produce a short operational summary.
-* [ ] Recommend whether collection is required.
-* [ ] Indicate whether clarification is required.
-* [ ] Preserve the original resident message.
-* [ ] Store AI-processing status.
-* [ ] Allow all AI-derived values to be edited later.
-
-## Supported AI categories
-
-* [ ] Support `overflowing_waste`.
-* [ ] Support `illegal_dumpsite`.
-* [ ] Support `missed_collection`.
-* [ ] Support `drainage_blockage`.
-* [ ] Support `other`.
-
-## Priority rules
-
-* [ ] Support Low priority.
-* [ ] Support Medium priority.
-* [ ] Support High priority.
-* [ ] Support Critical priority.
-* [ ] Treat clear road obstruction and significant health concerns as High where appropriate.
-* [ ] Treat immediate safety, severe health risks, major obstruction or dangerous drainage blockage as Critical where appropriate.
-
-## Rules-based fallback
-
-* [ ] Implement keyword-based category matching.
-* [ ] Detect urgency terms.
-* [ ] Assign a conservative priority.
-* [ ] Preserve the original report.
-* [ ] Mark the report as fallback-classified.
-* [ ] Recognise overflowing/full/spilling/packed terms.
-* [ ] Recognise illegal-dump/dumping/refuse-heap terms.
-* [ ] Recognise missed/not-collected/truck-did-not-come terms.
-* [ ] Recognise blocked-drainage/gutter/flood terms.
-* [ ] Keep the stored report available when Gemini fails.
-* [ ] Show AI-unavailable status without losing the report.
-
-## AI guardrails
-
-* [ ] Treat AI output as a recommendation.
-* [ ] Do not let AI automatically merge reports.
-* [ ] Do not accept vague locations solely because AI extracted a place.
-* [ ] Do not expose internal AI processing to public tracking.
-* [ ] Keep Gemini credentials server side.
-
-## Phase acceptance criteria
-
-* [ ] Typed landmarks can be geocoded.
-* [ ] Shared coordinates are stored correctly.
-* [ ] Vague locations trigger clarification.
-* [ ] Failed geocoding does not create a task.
-* [ ] Gemini returns validated structured triage.
-* [ ] The rules fallback works when Gemini is unavailable.
-* [ ] Reports remain stored when AI processing fails.
-* [ ] Repeated geocoding requests use cached results.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 6 handoff summary is recorded.
+* [x] Decision D-04 is approved and documented.
+* [x] Process reports asynchronously after storage without delaying submission.
+* [x] Keep browser coordinates private and never reverse geocode them.
+* [x] Resolve clear typed landmarks through cached, throttled Nominatim requests with attribution.
+* [x] Reject vague landmarks and preserve reports without inventing locations.
+* [x] Use server-only, contact-redacted Gemini structured output with runtime validation and two-attempt maximum.
+* [x] Apply conservative deterministic fallback classification when Gemini is unavailable.
+* [x] Preserve original messages and public-safe tracking while updating report status reactively.
+* [x] Do not create collection tasks, duplicate candidates, dashboard UI, or WhatsApp reports.
+* [x] Clear geocoding cache and throttle records on demo reset.
+* [x] Targeted code generation and lint checks pass.
+* [x] The Phase 6 handoff summary is recorded.
 
 ---
 
