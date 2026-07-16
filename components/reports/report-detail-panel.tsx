@@ -58,17 +58,45 @@ function priorityLabel(p: string | undefined) {
   return p === undefined ? "None" : p.charAt(0).toUpperCase() + p.slice(1);
 }
 
+/** AI statuses that indicate processing is still active (lock). */
+function isProcessingActive(aiStatus: string | undefined) {
+  return aiStatus === "pending" || aiStatus === "processing";
+}
+
+/** Terminal statuses that block all manager actions. */
+const terminalStatuses = new Set(["resolved", "duplicate", "rejected"]);
+
+function isTerminal(status: string) {
+  return terminalStatuses.has(status);
+}
+
 export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
   const r = detail.report;
-  const actionable = !["resolved", "duplicate", "rejected"].includes(r.status);
-  const coordinatesResolved =
-    r.latitude !== undefined &&
-    r.longitude !== undefined &&
-    r.locationResolutionStatus !== "pending" &&
-    r.locationResolutionStatus !== "failed";
+  const processing = isProcessingActive(r.aiStatus);
+  const terminal = isTerminal(r.status);
+  const actionable = !terminal && !processing;
+
+  const hasMapPoints =
+    r.hasValidOperationalCoordinates ||
+    (r.submittedLatitude !== undefined && r.submittedLongitude !== undefined);
 
   return (
     <div className="space-y-6">
+      {processing && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardContent className="pt-4 text-sm text-amber-800">
+            Processing… Automated report processing is still running. Actions
+            are unavailable until processing finishes.
+          </CardContent>
+        </Card>
+      )}
+      {terminal && (
+        <Card className="border-muted bg-muted/30">
+          <CardContent className="text-muted-foreground pt-4 text-sm">
+            This report is {r.status}. Manager actions are unavailable.
+          </CardContent>
+        </Card>
+      )}
       {actionable && <ActionsSection detail={detail} />}
       <Card>
         <CardHeader>
@@ -96,16 +124,22 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
                 {detail.classificationConfirmation.managerName}
               </p>
             )}
+            <p>Resolved location name: {r.resolvedLocationName ?? "—"}</p>
             <p>
-              Location:{" "}
-              {r.resolvedLocationName ??
-                (r.latitude !== undefined
-                  ? `${Number(r.latitude).toFixed(5)}, ${Number(r.longitude!).toFixed(5)}`
-                  : "Not resolved")}
+              Current operational coordinates:{" "}
+              {r.hasValidOperationalCoordinates
+                ? `${r.latitude!.toFixed(5)}, ${r.longitude!.toFixed(5)}`
+                : "—"}
             </p>
             <p>
               Resolution status:{" "}
               <StatusBadge status={r.locationResolutionStatus ?? "pending"} />
+            </p>
+            <p>
+              Classification confirmation:{" "}
+              {detail.classificationConfirmation
+                ? "Confirmed"
+                : "Not confirmed"}
             </p>
             {detail.linkedTask && (
               <p>
@@ -185,15 +219,27 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
               </p>
               <p>
                 AI clarification recommendation:{" "}
-                {r.aiNeedsClarification
-                  ? "Clarification recommended"
-                  : "No clarification recommended"}
+                {r.aiNeedsClarification === undefined
+                  ? "—"
+                  : r.aiNeedsClarification
+                    ? "Clarification recommended"
+                    : "No clarification recommended"}
               </p>
               <p>
                 Processing:{" "}
-                {r.aiStatus === "fallback" ? "Rules fallback" : r.aiStatus} ·{" "}
-                {r.aiModel ??
-                  (r.aiStatus === "fallback" ? "Rules fallback" : "—")}
+                {r.aiStatus === "fallback" ? "Rules fallback" : r.aiStatus}
+                {r.aiStatus === "fallback" ? "" : ` · ${r.aiModel ?? "—"}`}
+              </p>
+              <p>
+                AI-extracted location text: {r.aiExtractedLocationText ?? "—"}
+              </p>
+              <p>
+                Current clarification state:{" "}
+                {r.needsClarification === undefined
+                  ? "—"
+                  : r.needsClarification
+                    ? "Clarification required"
+                    : "No clarification required"}
               </p>
               <p>Processed: {time(r.aiProcessedAt)}</p>
             </div>
@@ -220,32 +266,71 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
             </section>
           )}
 
-          {/* Map */}
-          {coordinatesResolved &&
-            r.latitude !== undefined &&
-            r.longitude !== undefined && (
-              <section>
-                <div className="mb-1 flex items-center justify-between">
-                  <h3 className="font-medium">Location</h3>
+          {/* Map — shown when resolved coords OR submitted coords exist */}
+          {hasMapPoints && (
+            <section>
+              <div className="mb-1 flex items-center justify-between">
+                <h3 className="font-medium">Location</h3>
+                {r.hasValidOperationalCoordinates ? (
                   <Link
                     className="text-sm underline"
                     href={`/dashboard/map?type=report&selected=${r.id}`}
                   >
-                    Open on map
+                    Open on operations map
                   </Link>
-                </div>
-                <div className="h-64 w-full overflow-hidden rounded">
-                  <ReportLocationMap
-                    latitude={r.latitude}
-                    longitude={r.longitude}
-                    submittedLatitude={r.submittedLatitude}
-                    submittedLongitude={r.submittedLongitude}
-                    referenceNumber={r.referenceNumber}
-                  />
-                </div>
-              </section>
-            )}
+                ) : null}
+              </div>
+              <div className="h-64 w-full overflow-hidden rounded">
+                <ReportLocationMap
+                  operationalLatitude={
+                    r.hasValidOperationalCoordinates ? r.latitude : undefined
+                  }
+                  operationalLongitude={
+                    r.hasValidOperationalCoordinates ? r.longitude : undefined
+                  }
+                  submittedLatitude={r.submittedLatitude}
+                  submittedLongitude={r.submittedLongitude}
+                  referenceNumber={r.referenceNumber}
+                />
+              </div>
+            </section>
+          )}
 
+          {/* Status history */}
+          {detail.activityHistory.filter(
+            (e) => e.previousStatus || e.nextStatus,
+          ).length > 0 && (
+            <section>
+              <h3 className="mb-1 font-medium">Status history</h3>
+              <div className="max-h-48 space-y-1 overflow-y-auto text-sm">
+                {detail.activityHistory
+                  .filter((e) => e.previousStatus || e.nextStatus)
+                  .map((event) => (
+                    <p key={event.id} className="text-muted-foreground">
+                      <span className="text-foreground">
+                        {time(event.eventTime)}
+                      </span>
+                      : {event.description}
+                      {event.previousStatus ? (
+                        <>
+                          {" "}
+                          · From <StatusBadge status={event.previousStatus} />
+                        </>
+                      ) : null}
+                      {event.nextStatus ? (
+                        <>
+                          {" "}
+                          · To <StatusBadge status={event.nextStatus} />
+                        </>
+                      ) : null}
+                      {event.actorName ? ` — ${event.actorName}` : ""}
+                    </p>
+                  ))}
+              </div>
+            </section>
+          )}
+
+          {/* Nearby possible duplicates */}
           <section>
             <h3 className="mb-1 font-medium">Nearby possible duplicates</h3>
             {detail.nearbyReports.length === 0 ? (
@@ -263,13 +348,19 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
                       {candidate.referenceNumber}
                     </Link>{" "}
                     · {Math.round(candidate.distanceMeters)}m ·{" "}
-                    {categoryLabel(candidate.category)}
+                    {categoryLabel(candidate.category)} ·{" "}
+                    {priorityLabel(candidate.priority)} ·{" "}
+                    <StatusBadge status={candidate.status} /> ·{" "}
+                    {candidate.summary ?? "No summary"} ·{" "}
+                    {candidate.linkedTaskDisplayId ?? "No linked task"} ·{" "}
+                    {time(candidate.submittedAt)}
                   </li>
                 ))}
               </ul>
             )}
           </section>
 
+          {/* Activity history */}
           {detail.activityHistory.length > 0 && (
             <section>
               <h3 className="mb-1 font-medium">Activity history</h3>
@@ -297,67 +388,55 @@ export function ReportDetailPanel({ detail }: { detail: ReportDetail }) {
 function ActionsSection({ detail }: { detail: ReportDetail }) {
   const [activeForm, setActiveForm] = useState<string | null>(null);
   const close = () => setActiveForm(null);
+  const r = detail.report;
+  const hasActiveTask =
+    detail.linkedTask !== null &&
+    ["pending", "scheduled", "assigned", "en_route"].includes(
+      detail.linkedTask.status,
+    );
+  const hasCoords = r.hasValidOperationalCoordinates;
+  const classificationAvailable =
+    r.category !== undefined && r.priority !== undefined;
+  const canCoordinate = !hasActiveTask;
+  const canTask = hasCoords && !hasActiveTask && classificationAvailable;
+  const canLink =
+    hasCoords && !hasActiveTask && detail.eligibleTasks.length > 0;
+  const canDuplicate =
+    hasCoords && !hasActiveTask && detail.nearbyReports.length > 0;
+  const canResolve =
+    detail.linkedTask === null || detail.linkedTask.status === "collected";
 
   if (activeForm === null) {
+    const actions = [
+      ["classification", "Classification", classificationAvailable],
+      ["coordinates", "Update coordinates", canCoordinate],
+      ["clarification", "Request info", !hasActiveTask],
+      ["create_task", "Create task", canTask],
+      ["link_task", "Link task", canLink],
+      ["duplicate", "Mark duplicate", canDuplicate],
+      ["reject", "Reject", !hasActiveTask],
+      ["resolve", "Resolve", canResolve],
+    ] as const;
     return (
       <Card>
-        <CardContent className="flex flex-wrap gap-2 pt-4">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setActiveForm("classification")}
-          >
-            Classification
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setActiveForm("coordinates")}
-          >
-            Update coordinates
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setActiveForm("clarification")}
-          >
-            Request info
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setActiveForm("create_task")}
-          >
-            Create task
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setActiveForm("link_task")}
-          >
-            Link task
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setActiveForm("duplicate")}
-          >
-            Mark duplicate
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setActiveForm("reject")}
-          >
-            Reject
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setActiveForm("resolve")}
-          >
-            Resolve
-          </Button>
+        <CardContent className="space-y-2 pt-4">
+          <div className="flex flex-wrap gap-2">
+            {actions.map(([id, label, enabled]) => (
+              <Button
+                key={id}
+                size="sm"
+                variant="outline"
+                disabled={!enabled}
+                onClick={() => enabled && setActiveForm(id)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Unavailable actions require settled processing, valid coordinates,
+            or an eligible task as applicable.
+          </p>
         </CardContent>
       </Card>
     );
@@ -592,7 +671,10 @@ function ClarificationForm({
     setState({ message: null, isRunning: true });
     try {
       await requestInfo({ reportId: detail.report.id, note });
-      setState({ message: "Information requested.", isRunning: false });
+      setState({
+        message: "Report marked as requiring more information.",
+        isRunning: false,
+      });
       setNote("");
     } catch (error) {
       setState({ message: getReportActionError(error), isRunning: false });
@@ -607,7 +689,7 @@ function ClarificationForm({
         </p>
       )}
       <label className="block text-sm">
-        Note to citizen
+        Clarification note
         <Input
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -615,13 +697,17 @@ function ClarificationForm({
           required
         />
       </label>
+      <p className="text-muted-foreground mt-2 text-xs">
+        This records the information needed and updates the public status. No
+        message is sent to the resident yet.
+      </p>
       <Button
         size="sm"
         className="mt-3"
         disabled={state.isRunning}
         onClick={handleSubmit}
       >
-        {state.isRunning ? "Sending…" : "Request"}
+        {state.isRunning ? "Updating…" : "Request more information"}
       </Button>
     </ActionFormCard>
   );
@@ -662,6 +748,12 @@ function CreateTaskForm({
 
   return (
     <ActionFormCard title="Create collection task" onClose={onClose}>
+      {detail.report.requiresCollection === false && (
+        <p className="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">
+          AI recommended investigation rather than immediate collection. A fleet
+          manager may still create a task manually.
+        </p>
+      )}
       {state.message && (
         <p className="mb-2 text-sm" role="status">
           {state.message}

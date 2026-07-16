@@ -98,8 +98,11 @@ export function ReportsTable({
                 <StatusBadge status={report.status} />
               </td>
               <td className="p-3">
-                <StatusBadge status={report.aiStatus} />
-                {report.aiStatus === "fallback" ? " Rules fallback" : ""}
+                {report.aiStatus === "fallback" ? (
+                  "Rules fallback"
+                ) : (
+                  <StatusBadge status={report.aiStatus} />
+                )}
               </td>
               <td className="p-3">
                 {report.linkedTask

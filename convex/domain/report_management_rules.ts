@@ -1,6 +1,6 @@
 import type { Doc } from "../_generated/dataModel";
 import { isCoordinateInsideBarigaPilot } from "./location_rules";
-import type { ReportStatus, TaskStatus } from "./validators";
+import type { AiStatus, ReportStatus, TaskStatus } from "./validators";
 
 const terminalReportStatuses = new Set<ReportStatus>([
   "resolved",
@@ -20,6 +20,10 @@ export function isTerminalReportStatus(status: ReportStatus) {
 
 export function canReceiveManagerActions(status: ReportStatus) {
   return !isTerminalReportStatus(status);
+}
+
+export function isReportProcessingActive(aiStatus: AiStatus) {
+  return aiStatus === "pending" || aiStatus === "processing";
 }
 
 export function isActiveTaskStatus(status: TaskStatus) {

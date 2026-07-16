@@ -120,15 +120,8 @@ export function CitizenReportsPage() {
 
   const summary = {
     total: reports.length,
-    needsReview: reports.filter(
-      (r) => r.status === "new" || r.status === "needs_clarification",
-    ).length,
-    activeTasks: reports.filter(
-      (r) =>
-        r.status === "task_created" ||
-        r.status === "scheduled" ||
-        r.status === "in_progress",
-    ).length,
+    newReports: reports.filter((r) => r.status === "new").length,
+    inProgress: reports.filter((r) => r.status === "in_progress").length,
     resolved: reports.filter((r) => r.status === "resolved").length,
   };
 
@@ -147,15 +140,15 @@ export function CitizenReportsPage() {
           href="/dashboard/reports"
         />
         <SummaryCard
-          label="Needs review"
-          value={summary.needsReview}
+          label="New reports"
+          value={summary.newReports}
           icon={Flag}
           href="/dashboard/reports?status=new"
-          emphasis={summary.needsReview > 0 ? "critical" : "default"}
+          emphasis={summary.newReports > 0 ? "critical" : "default"}
         />
         <SummaryCard
-          label="Active tasks"
-          value={summary.activeTasks}
+          label="In progress"
+          value={summary.inProgress}
           icon={ClipboardList}
           href="/dashboard/reports?status=in_progress"
         />

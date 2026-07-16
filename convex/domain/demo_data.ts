@@ -254,7 +254,7 @@ type DemoReport = {
   category: ReportCategory;
   priority: Priority;
   summary: string;
-  landmarkText: string;
+  landmarkText?: string;
   latitude?: number;
   longitude?: number;
   submittedCoordinates?: boolean;
@@ -276,7 +276,6 @@ export const demoReports: readonly DemoReport[] = [
     priority: "high",
     summary:
       "Overflowing waste is partially obstructing the road beside Bariga Market.",
-    landmarkText: "Bariga Market",
     latitude: 6.5369,
     longitude: 3.3872,
     submittedCoordinates: true,
@@ -313,7 +312,6 @@ export const demoReports: readonly DemoReport[] = [
     priority: "medium",
     summary:
       "A scheduled collection was reportedly missed near Pedro Bus Stop.",
-    landmarkText: "Pedro Bus Stop",
     latitude: 6.536,
     longitude: 3.394,
     submittedCoordinates: true,

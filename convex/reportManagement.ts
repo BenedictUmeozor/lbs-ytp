@@ -15,6 +15,7 @@ import {
   hasValidOperationalCoordinates,
   haversineDistanceMeters,
   isActiveTaskStatus,
+  isReportProcessingActive,
   reportStatusForTaskStatus,
   validatedManagerNote,
 } from "./domain/report_management_rules";
@@ -37,7 +38,8 @@ type ErrorCode =
   | "DUPLICATE_TARGET_INVALID"
   | "DUPLICATE_TOO_FAR"
   | "NOTE_REQUIRED"
-  | "LINKED_TASK_NOT_COLLECTED";
+  | "LINKED_TASK_NOT_COLLECTED"
+  | "REPORT_PROCESSING_ACTIVE";
 
 function fail(code: ErrorCode, message: string): never {
   throw new ConvexError({ code, message });
@@ -66,6 +68,15 @@ function requireActionable(report: Doc<"citizenReports">) {
     fail(
       "INVALID_REPORT_STATE",
       "This action is unavailable for a terminal report.",
+    );
+  }
+}
+
+function requireProcessingSettled(report: Doc<"citizenReports">) {
+  if (isReportProcessingActive(report.aiStatus)) {
+    fail(
+      "REPORT_PROCESSING_ACTIVE",
+      "Wait for report processing to finish before taking this action.",
     );
   }
 }
@@ -272,6 +283,7 @@ export const getReportDetail = query({
             : undefined),
         latitude: report.latitude,
         longitude: report.longitude,
+        hasValidOperationalCoordinates: hasValidOperationalCoordinates(report),
         resolvedLocationName: report.resolvedLocationName,
         locationResolutionStatus: report.locationResolutionStatus,
         requiresCollection: report.requiresCollection,
@@ -336,6 +348,7 @@ export const confirmClassification = mutation({
     const { user } = await requireFleetManager(ctx);
     const report = await reportOrFail(ctx, args.reportId);
     requireActionable(report);
+    requireProcessingSettled(report);
     if (
       report.category === undefined ||
       report.priority === undefined ||
@@ -374,11 +387,7 @@ export const updateClassification = mutation({
     const { user } = await requireFleetManager(ctx);
     const report = await reportOrFail(ctx, args.reportId);
     requireActionable(report);
-    if (["pending", "processing"].includes(report.aiStatus))
-      fail(
-        "CLASSIFICATION_UNAVAILABLE",
-        "Wait for report processing before editing classification.",
-      );
+    requireProcessingSettled(report);
     if (
       report.category === args.category &&
       report.priority === args.priority &&
@@ -414,6 +423,7 @@ export const updateResolvedCoordinates = mutation({
     const { user } = await requireFleetManager(ctx);
     const report = await reportOrFail(ctx, args.reportId);
     requireActionable(report);
+    requireProcessingSettled(report);
     if (
       !Number.isFinite(args.latitude) ||
       !Number.isFinite(args.longitude) ||
@@ -485,6 +495,7 @@ export const requestMoreInformation = mutation({
     const { user } = await requireFleetManager(ctx);
     const report = await reportOrFail(ctx, args.reportId);
     requireActionable(report);
+    requireProcessingSettled(report);
     const note = validatedManagerNote(args.note, true);
     if (note === null)
       fail("NOTE_REQUIRED", "Enter a note between 3 and 240 characters.");
@@ -524,6 +535,7 @@ export const createCollectionTask = mutation({
     const { user } = await requireFleetManager(ctx);
     const report = await reportOrFail(ctx, args.reportId);
     requireActionable(report);
+    requireProcessingSettled(report);
     requireCoordinates(report);
     const reason = validatedManagerNote(args.reason, true);
     if (reason === null)
@@ -588,6 +600,7 @@ export const linkExistingTask = mutation({
     const { user } = await requireFleetManager(ctx);
     const report = await reportOrFail(ctx, args.reportId);
     requireActionable(report);
+    requireProcessingSettled(report);
     requireCoordinates(report);
     if (await activeLinkedTask(ctx, report))
       fail(
@@ -652,6 +665,7 @@ export const markDuplicate = mutation({
     const report = await reportOrFail(ctx, args.reportId);
     const target = await reportOrFail(ctx, args.duplicateOfReportId);
     requireActionable(report);
+    requireProcessingSettled(report);
     if (!canReceiveManagerActions(target.status))
       fail(
         "DUPLICATE_TARGET_INVALID",
@@ -706,6 +720,7 @@ export const rejectReport = mutation({
     const { user } = await requireFleetManager(ctx);
     const report = await reportOrFail(ctx, args.reportId);
     requireActionable(report);
+    requireProcessingSettled(report);
     const reason = validatedManagerNote(args.reason, true);
     if (reason === null)
       fail("NOTE_REQUIRED", "Enter a reason between 3 and 240 characters.");
@@ -740,6 +755,7 @@ export const resolveReport = mutation({
     const { user } = await requireFleetManager(ctx);
     const report = await reportOrFail(ctx, args.reportId);
     requireActionable(report);
+    requireProcessingSettled(report);
     const note =
       args.note === undefined ? "" : validatedManagerNote(args.note, false);
     if (note === null)

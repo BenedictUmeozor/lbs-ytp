@@ -14,18 +14,25 @@ const ReportLocationMapInner = dynamic(
 );
 
 export function ReportLocationMap(props: {
-  latitude?: number;
-  longitude?: number;
+  operationalLatitude?: number;
+  operationalLongitude?: number;
   submittedLatitude?: number;
   submittedLongitude?: number;
   referenceNumber: string;
 }) {
-  if (props.latitude === undefined || props.longitude === undefined)
-    return null;
+  const hasResolved =
+    props.operationalLatitude !== undefined &&
+    props.operationalLongitude !== undefined;
+  const hasSubmitted =
+    props.submittedLatitude !== undefined &&
+    props.submittedLongitude !== undefined;
+
+  if (!hasResolved && !hasSubmitted) return null;
+
   return (
     <ReportLocationMapInner
-      latitude={props.latitude}
-      longitude={props.longitude}
+      operationalLatitude={props.operationalLatitude}
+      operationalLongitude={props.operationalLongitude}
       submittedLatitude={props.submittedLatitude}
       submittedLongitude={props.submittedLongitude}
       referenceNumber={props.referenceNumber}

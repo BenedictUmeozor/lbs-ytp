@@ -138,16 +138,23 @@ export function OperationsMapPage() {
   useEffect(() => {
     if (
       data === undefined ||
-      requestedType !== "bin" ||
+      (requestedType !== "bin" && requestedType !== "report") ||
       requestedId === null ||
       handledRequestedSelection.current === `${requestedType}:${requestedId}`
     )
       return;
-    const bin = data.bins.find((item) => item.id === requestedId);
-    if (bin === undefined) return;
+    const entity =
+      requestedType === "bin"
+        ? data.bins.find((item) => item.id === requestedId)
+        : data.reports.find((item) => item.id === requestedId);
+    if (entity === undefined) return;
     handledRequestedSelection.current = `${requestedType}:${requestedId}`;
     const timeout = window.setTimeout(
-      () => select({ type: "bin", id: bin.id }, true),
+      () =>
+        select(
+          { type: requestedType as "bin" | "report", id: entity.id },
+          true,
+        ),
       0,
     );
     return () => window.clearTimeout(timeout);
