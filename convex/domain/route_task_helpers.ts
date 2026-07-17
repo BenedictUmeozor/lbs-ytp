@@ -31,7 +31,7 @@ function toRouteTask(task: Doc<"collectionTasks">): RouteTask {
   };
 }
 
-async function recalculateProposedRouteMetrics(
+export async function recalculateProposedRouteMetrics(
   ctx: MutationCtx,
   route: Doc<"routes">,
   stops: readonly Doc<"routeStops">[],
@@ -129,10 +129,17 @@ export async function addTaskToProposedRoute(
     sequenceNumber: stops.length + 1,
     status: "pending",
   });
-  await ctx.db.patch(route._id, {
-    orderedStopIds: [...route.orderedStopIds, stopId],
-  });
-  return { route, stopId };
+  const updatedStops = await ctx.db
+    .query("routeStops")
+    .withIndex("by_routeId_and_sequenceNumber", (q) =>
+      q.eq("routeId", route._id),
+    )
+    .order("asc")
+    .collect();
+  if (updatedStops.at(-1)?._id !== stopId)
+    fail("ROUTE_STOP_UNAVAILABLE", "The route stop could not be appended.");
+  const update = await recalculateProposedRouteMetrics(ctx, route, updatedStops);
+  return { route: { ...route, ...update }, stopId };
 }
 
 export async function scheduleTaskOnProposedRoute(
@@ -175,6 +182,41 @@ export async function scheduleTaskOnProposedRoute(
     actorUserId,
   );
   return stopId;
+}
+
+export async function returnTaskToPendingFromProposedRoute(
+  ctx: MutationCtx,
+  task: Doc<"collectionTasks">,
+  route: Doc<"routes">,
+  actorUserId: Id<"users">,
+  now: number,
+) {
+  await ctx.db.patch(task._id, {
+    status: "pending",
+    routeId: undefined,
+    scheduledAt: undefined,
+    assignedTruckId: undefined,
+    statusUpdatedAt: now,
+  });
+  await syncLinkedReportTaskStatus(ctx, task, "pending", actorUserId, now);
+  await insertActivityEvent(
+    ctx,
+    "task_status_changed",
+    `Task ${task.displayId} returned to pending.`,
+    "collection_task",
+    task._id,
+    actorUserId,
+    "scheduled",
+    "pending",
+  );
+  await insertActivityEvent(
+    ctx,
+    "route_task_unlinked",
+    `Task ${task.displayId} removed from proposed route ${route.displayId}.`,
+    "route",
+    route._id,
+    actorUserId,
+  );
 }
 
 export async function removeTaskFromProposedRoute(

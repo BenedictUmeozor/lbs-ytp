@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 9B
-* **Current milestone:** Route Builder and Route Lifecycle
+* **Current phase:** Phase 9C
+* **Current milestone:** Active Route and Re-optimisation
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -152,8 +152,8 @@ Update this table after completing each phase.
 | Phase 6  | Complete | 2026-07-16 | Asynchronous processing has monotonic attempt versions, stale-result guards, six-minute recovery checks, and a three-attempt limit. Nominatim has an eight-second timeout, caches definitive unusable results, and accepts only in-pilot locations. Gemini uses `timeout_ms: 15000` with SDK retries disabled, makes at most two application-level requests, and does not retry permanent 4xx errors. Fallback preserves successful location resolution. Outside-pilot GPS and unresolved reports are excluded from both operational maps while compatible completed/fallback legacy seeded markers remain visible. No collection tasks, duplicate detection, dashboard, or messaging were added. |
 | Phase 7  | Complete | 2026-07-16 | Protected report actions wait for Phase 6 processing to settle and remain server-side guarded. Managers can repair incomplete classifications before confirming them, and stale action forms close after live updates invalidate their actions. Submitted GPS evidence and valid operational coordinates are shown distinctly, compact-map markers fit both points, report deep links focus the operations map safely, and automatic task workflows remain deferred to Phase 8. |
 | Phase 8  | Complete | 2026-07-16 | Automatic report-task eligibility rules are implemented for High and Critical reports with settled processing, valid operational coordinates and collection recommendations. Nearby same-category active tasks create fleet-manager review candidates instead of duplicates; managers can link the report or explicitly create a separate task. Task lifecycle transitions are centrally enforced, linked reports and smart bins are synchronised, and smart-bin collection now enters awaiting-empty-confirmation rather than claiming an empty bin. The protected Collection Tasks dashboard provides live lists, URL filters, details, lifecycle actions and proposed-route task linking. The correction pass synchronises linked report statuses when tasks enter or leave proposed routes, applies source-bin and linked-report collection updates independently, synchronises collected and unable-to-complete tasks with route stops, and clears candidate-task references when reports become terminal. Route generation and active-route orchestration remain Phase 9 scope; Phase 9 should reuse the task and proposed-route helpers rather than duplicating them. |
-| Phase 9A | Complete | 2026-07-16 | The protected route-builder query, deterministic priority-and-distance algorithm, and atomic proposed-route generation are complete. Selected tasks become scheduled, linked reports are synchronised, and protected route list/detail queries are available. A proposed route reserves its selected truck only through the route record; the truck is not assigned or status-changed yet. The correction ensures removing a proposed stop recalculates distance and duration while preserving remaining order, prevents removing the final proposed stop, returns the correct routed-task validation error, and keeps re-optimisation exclusively in Phase 9C. Phase 9B must build the route UI and lifecycle actions without changing the algorithm. |
-| Phase 9B | Pending | —               | —               |
+| Phase 9A | Complete | 2026-07-16 | The protected route-builder query, deterministic priority-and-distance algorithm, and atomic proposed-route generation are complete. Selected tasks become scheduled, linked reports are synchronised, and protected route list/detail queries are available. A proposed route reserves its selected truck only through the route record; the truck is not assigned or status-changed yet. The correction ensures removing a proposed stop recalculates distance and duration while preserving remaining order, prevents removing the final proposed stop, returns the correct routed-task validation error, and keeps re-optimisation exclusively in Phase 9C. Adding a task to an existing proposed route now recalculates route distance and duration while preserving the existing order and appending the added task. |
+| Phase 9B | Complete | 2026-07-16 | Route-builder UI is complete. Proposed routes can be generated and reviewed, and their order can be manually adjusted. Adding and removing stops recalculates route metrics. Routes can be assigned, started, cancelled while proposed, and completed when terminal; completed route history is preserved. Active-route tracking and re-optimisation remain Phase 9C. Truck movement remains Phase 10. |
 | Phase 9C | Pending | —               | —               |
 | Phase 10 | Pending | —               | —               |
 | Phase 11 | Pending | —               | —               |
@@ -1298,32 +1298,32 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Route builder
 
-* [ ] Allow selection of one available truck.
-* [ ] Allow selection of pending tasks.
-* [ ] Enforce the eight-stop maximum.
-* [ ] Prioritise Critical tasks in the proposal.
-* [ ] Display route ID.
-* [ ] Display assigned truck.
-* [ ] Display depot.
-* [ ] Display ordered stops.
-* [ ] Display number of stops.
-* [ ] Display estimated straight-line distance.
-* [ ] Display estimated duration.
-* [ ] Display priority composition.
-* [ ] Display simulated traffic penalty.
-* [ ] Display simulated road-condition penalty.
+* [x] Allow selection of one available truck.
+* [x] Allow selection of pending tasks.
+* [x] Enforce the eight-stop maximum.
+* [x] Prioritise Critical tasks in the proposal.
+* [x] Display route ID.
+* [x] Display assigned truck.
+* [x] Display depot.
+* [x] Display ordered stops.
+* [x] Display number of stops.
+* [x] Display estimated straight-line distance.
+* [x] Display estimated duration.
+* [x] Display priority composition.
+* [x] Display simulated traffic penalty.
+* [x] Display simulated road-condition penalty.
 
 ## Route actions
 
-* [ ] Generate proposed route.
-* [ ] Review proposed order before assignment.
-* [ ] Remove a proposed stop.
-* [ ] Move a proposed stop manually.
-* [ ] Assign route.
-* [ ] Start route.
-* [ ] Cancel eligible route.
-* [ ] Complete route.
-* [ ] Preserve completed route history.
+* [x] Generate proposed route.
+* [x] Review proposed order before assignment.
+* [x] Remove a proposed stop.
+* [x] Move a proposed stop manually.
+* [x] Assign route.
+* [x] Start route.
+* [x] Cancel eligible route.
+* [x] Complete route.
+* [x] Preserve completed route history.
 
 ---
 

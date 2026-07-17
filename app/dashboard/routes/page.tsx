@@ -1,10 +1,5 @@
-import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
+import { RoutesPage } from "@/components/routes/routes-page";
 
-export default function RoutesPage() {
-  return (
-    <DashboardPlaceholder
-      title="Routes"
-      description="Route generation and collection execution will be implemented in the routing phase."
-    />
-  );
+export default function RoutesPageWrapper() {
+  return <RoutesPage />;
 }

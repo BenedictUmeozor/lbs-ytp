@@ -11,13 +11,11 @@ import { markBinAwaitingEmptyConfirmation } from "./bins";
 import { requireFleetManager } from "./domain/auth";
 import {
   removeTaskFromProposedRoute,
+  returnTaskToPendingFromProposedRoute,
   scheduleTaskOnProposedRoute,
   updateTaskRouteStopStatus,
 } from "./domain/route_task_helpers";
-import {
-  resolveLinkedReportsForCollectedTask,
-  syncLinkedReportTaskStatus,
-} from "./domain/task_helpers";
+import { resolveLinkedReportsForCollectedTask } from "./domain/task_helpers";
 import {
   canCancelTask,
   canChangeTaskPriority,
@@ -513,31 +511,12 @@ export const removeFromProposedRoute = mutation({
     const { user } = await requireFleetManager(ctx);
     const task = await taskOrFail(ctx, args.taskId);
     const route = await removeTaskFromProposedRoute(ctx, task._id);
-    const now = Date.now();
-    await ctx.db.patch(task._id, {
-      status: "pending",
-      routeId: undefined,
-      scheduledAt: undefined,
-      statusUpdatedAt: now,
-    });
-    await syncLinkedReportTaskStatus(ctx, task, "pending", user._id, now);
-    await insertActivityEvent(
+    await returnTaskToPendingFromProposedRoute(
       ctx,
-      "task_status_changed",
-      `Task ${task.displayId} returned to pending.`,
-      "collection_task",
-      task._id,
+      task,
+      route,
       user._id,
-      "scheduled",
-      "pending",
-    );
-    await insertActivityEvent(
-      ctx,
-      "route_task_unlinked",
-      `Task ${task.displayId} removed from proposed route ${route.displayId}.`,
-      "route",
-      route._id,
-      user._id,
+      Date.now(),
     );
     return null;
   },

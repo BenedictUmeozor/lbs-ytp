@@ -190,7 +190,7 @@ function RouteForm({
     return (
       <ActionCard title="Remove from proposed route" onClose={onClose}>
         <p className="text-sm">
-          This returns the task to pending and resequences the unstarted route.
+          This returns the task to pending and resequences the unstarted route. The final stop cannot be removed; cancel the route instead.
         </p>
         {message && (
           <p role="status" className="text-sm">
@@ -212,6 +212,7 @@ function RouteForm({
     );
   return (
     <ActionCard title="Assign to proposed route" onClose={onClose}>
+      <p className="text-sm">This appends the task to the proposed order and recalculates its estimate. You can adjust the order on the Routes page.</p>
       <label className="text-sm">
         Proposed route
         <select
