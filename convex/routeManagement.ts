@@ -231,10 +231,10 @@ export const generateProposedRoute = mutation({
       const task = tasks[index];
       if (task === null)
         fail("TASK_UNAVAILABLE", "A selected collection task is unavailable.");
-      if (task.status !== "pending")
-        fail("TASK_NOT_PENDING", "Selected tasks must still be pending.");
       if (task.routeId !== undefined)
         fail("TASK_ALREADY_ROUTED", "A selected task already belongs to a route.");
+      if (task.status !== "pending")
+        fail("TASK_NOT_PENDING", "Selected tasks must still be pending.");
       if (
         !hasValidRouteCoordinates({
           latitude: task.latitude,
