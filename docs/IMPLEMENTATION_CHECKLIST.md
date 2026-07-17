@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 9
-* **Current milestone:** Route Generation and Active-Route Operations
+* **Current phase:** Phase 9B
+* **Current milestone:** Route Builder and Route Lifecycle
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -152,7 +152,9 @@ Update this table after completing each phase.
 | Phase 6  | Complete | 2026-07-16 | Asynchronous processing has monotonic attempt versions, stale-result guards, six-minute recovery checks, and a three-attempt limit. Nominatim has an eight-second timeout, caches definitive unusable results, and accepts only in-pilot locations. Gemini uses `timeout_ms: 15000` with SDK retries disabled, makes at most two application-level requests, and does not retry permanent 4xx errors. Fallback preserves successful location resolution. Outside-pilot GPS and unresolved reports are excluded from both operational maps while compatible completed/fallback legacy seeded markers remain visible. No collection tasks, duplicate detection, dashboard, or messaging were added. |
 | Phase 7  | Complete | 2026-07-16 | Protected report actions wait for Phase 6 processing to settle and remain server-side guarded. Managers can repair incomplete classifications before confirming them, and stale action forms close after live updates invalidate their actions. Submitted GPS evidence and valid operational coordinates are shown distinctly, compact-map markers fit both points, report deep links focus the operations map safely, and automatic task workflows remain deferred to Phase 8. |
 | Phase 8  | Complete | 2026-07-16 | Automatic report-task eligibility rules are implemented for High and Critical reports with settled processing, valid operational coordinates and collection recommendations. Nearby same-category active tasks create fleet-manager review candidates instead of duplicates; managers can link the report or explicitly create a separate task. Task lifecycle transitions are centrally enforced, linked reports and smart bins are synchronised, and smart-bin collection now enters awaiting-empty-confirmation rather than claiming an empty bin. The protected Collection Tasks dashboard provides live lists, URL filters, details, lifecycle actions and proposed-route task linking. The correction pass synchronises linked report statuses when tasks enter or leave proposed routes, applies source-bin and linked-report collection updates independently, synchronises collected and unable-to-complete tasks with route stops, and clears candidate-task references when reports become terminal. Route generation and active-route orchestration remain Phase 9 scope; Phase 9 should reuse the task and proposed-route helpers rather than duplicating them. |
-| Phase 9  | Pending | —               | —               |
+| Phase 9A | Complete | 2026-07-16 | The protected route-builder query, deterministic priority-and-distance algorithm, and atomic proposed-route generation are complete. Selected tasks become scheduled, linked reports are synchronised, and protected route list/detail queries are available. A proposed route reserves its selected truck only through the route record; the truck is not assigned or status-changed yet. Phase 9B must build the route UI and lifecycle actions without changing the algorithm. |
+| Phase 9B | Pending | —               | —               |
+| Phase 9C | Pending | —               | —               |
 | Phase 10 | Pending | —               | —               |
 | Phase 11 | Pending | —               | —               |
 | Phase 12 | Pending | —               | —               |
@@ -1252,33 +1254,47 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ---
 
-# Phase 9 — Route Generation and Active-Route Operations
+# Phase 9A — Route Engine and Backend Foundation
 
 ## Route validation
 
-* [ ] Require one available truck.
-* [ ] Reject trucks under maintenance.
-* [ ] Require at least one task.
-* [ ] Allow a maximum of eight tasks.
-* [ ] Require all selected tasks to be pending.
-* [ ] Require all selected tasks to have coordinates.
-* [ ] Prevent tasks already belonging to an active route.
-* [ ] Allow one truck per route.
+* [x] Require one available truck.
+* [x] Reject trucks under maintenance.
+* [x] Require at least one task.
+* [x] Allow a maximum of eight tasks.
+* [x] Require all selected tasks to be pending.
+* [x] Require all selected tasks to have coordinates.
+* [x] Prevent tasks already belonging to an active route.
+* [x] Allow one truck per route.
 
 ## Route algorithm
 
-* [ ] Start from the configured depot.
-* [ ] Select Critical tasks first.
-* [ ] Select the nearest eligible Critical task.
-* [ ] Continue until all selected Critical tasks are placed.
-* [ ] Order High tasks using nearest-neighbour distance.
-* [ ] Add lower-priority tasks only when manually selected.
-* [ ] Apply simulated traffic penalty.
-* [ ] Apply simulated road-condition penalty.
-* [ ] Return an ordered stop list.
-* [ ] Calculate geographic distance between coordinates.
-* [ ] Calculate an estimated duration appropriate for the demo.
-* [ ] Keep the algorithm deterministic for identical inputs where practical.
+* [x] Start from the configured depot.
+* [x] Select Critical tasks first.
+* [x] Select the nearest eligible Critical task.
+* [x] Continue until all selected Critical tasks are placed.
+* [x] Order High tasks using nearest-neighbour distance.
+* [x] Add lower-priority tasks only when manually selected.
+* [x] Apply simulated traffic penalty.
+* [x] Apply simulated road-condition penalty.
+* [x] Return an ordered stop list.
+* [x] Calculate geographic distance between coordinates.
+* [x] Calculate an estimated duration appropriate for the demo.
+* [x] Keep the algorithm deterministic for identical inputs where practical.
+
+## Phase 9A handoff
+
+* [x] The protected route-builder query is available.
+* [x] The deterministic route algorithm is complete.
+* [x] Proposed-route generation is atomic.
+* [x] Selected tasks become scheduled and linked reports are synchronised.
+* [x] Route list and detail queries are available.
+* [x] The selected truck remains unassigned until Phase 9B.
+* [x] Phase 9B must build the route UI and lifecycle actions without changing the algorithm.
+
+---
+
+# Phase 9B — Route Builder and Route Lifecycle
 
 ## Route builder
 
@@ -1309,6 +1325,10 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 * [ ] Cancel eligible route.
 * [ ] Complete route.
 * [ ] Preserve completed route history.
+
+---
+
+# Phase 9C — Active Route and Re-optimisation
 
 ## Active route
 
@@ -1341,7 +1361,7 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 * [ ] Clearly label traffic penalties as simulated.
 * [ ] Clearly label road-condition penalties as simulated.
 
-## Route acceptance criteria
+## Phase 9 overall acceptance criteria
 
 * [ ] A route has one truck.
 * [ ] A route has no more than eight stops.

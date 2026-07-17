@@ -22,6 +22,7 @@ import type * as domain_report_management_rules from "../domain/report_managemen
 import type * as domain_report_rules from "../domain/report_rules.js";
 import type * as domain_report_task_evaluation from "../domain/report_task_evaluation.js";
 import type * as domain_report_triage from "../domain/report_triage.js";
+import type * as domain_route_algorithm from "../domain/route_algorithm.js";
 import type * as domain_route_task_helpers from "../domain/route_task_helpers.js";
 import type * as domain_status_rules from "../domain/status_rules.js";
 import type * as domain_task_helpers from "../domain/task_helpers.js";
@@ -37,6 +38,7 @@ import type * as reportManagement from "../reportManagement.js";
 import type * as reportProcessing from "../reportProcessing.js";
 import type * as reportProcessingData from "../reportProcessingData.js";
 import type * as reports from "../reports.js";
+import type * as routeManagement from "../routeManagement.js";
 import type * as routes from "../routes.js";
 import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
@@ -66,6 +68,7 @@ declare const fullApi: ApiFromModules<{
   "domain/report_rules": typeof domain_report_rules;
   "domain/report_task_evaluation": typeof domain_report_task_evaluation;
   "domain/report_triage": typeof domain_report_triage;
+  "domain/route_algorithm": typeof domain_route_algorithm;
   "domain/route_task_helpers": typeof domain_route_task_helpers;
   "domain/status_rules": typeof domain_status_rules;
   "domain/task_helpers": typeof domain_task_helpers;
@@ -81,6 +84,7 @@ declare const fullApi: ApiFromModules<{
   reportProcessing: typeof reportProcessing;
   reportProcessingData: typeof reportProcessingData;
   reports: typeof reports;
+  routeManagement: typeof routeManagement;
   routes: typeof routes;
   seed: typeof seed;
   settings: typeof settings;

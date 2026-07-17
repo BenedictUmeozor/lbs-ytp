@@ -10,8 +10,8 @@ import {
 import { markBinAwaitingEmptyConfirmation } from "./bins";
 import { requireFleetManager } from "./domain/auth";
 import {
-  addTaskToProposedRoute,
   removeTaskFromProposedRoute,
+  scheduleTaskOnProposedRoute,
   updateTaskRouteStopStatus,
 } from "./domain/route_task_helpers";
 import {
@@ -495,37 +495,13 @@ export const assignToProposedRoute = mutation({
       .unique();
     if (settings === null)
       fail("SETTINGS_UNAVAILABLE", "Route settings are unavailable.");
-    const { route } = await addTaskToProposedRoute(
+    await scheduleTaskOnProposedRoute(
       ctx,
-      task._id,
+      task,
       args.routeId,
-      settings.maximumRouteStops,
-    );
-    const now = Date.now();
-    await ctx.db.patch(task._id, {
-      status: "scheduled",
-      routeId: route._id,
-      scheduledAt: now,
-      statusUpdatedAt: now,
-    });
-    await syncLinkedReportTaskStatus(ctx, task, "scheduled", user._id, now);
-    await insertActivityEvent(
-      ctx,
-      "task_status_changed",
-      `Task ${task.displayId} scheduled on ${route.displayId}.`,
-      "collection_task",
-      task._id,
+      Math.min(settings.maximumRouteStops, 8),
       user._id,
-      "pending",
-      "scheduled",
-    );
-    await insertActivityEvent(
-      ctx,
-      "route_task_linked",
-      `Task ${task.displayId} added to proposed route ${route.displayId}.`,
-      "route",
-      route._id,
-      user._id,
+      Date.now(),
     );
     return null;
   },

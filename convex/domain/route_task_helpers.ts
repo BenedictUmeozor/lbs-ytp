@@ -1,5 +1,7 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
+import { syncLinkedReportTaskStatus } from "./task_helpers";
+import { insertActivityEvent } from "./write_helpers";
 
 export async function updateTaskRouteStopStatus(
   ctx: MutationCtx,
@@ -67,6 +69,48 @@ export async function addTaskToProposedRoute(
     orderedStopIds: [...route.orderedStopIds, stopId],
   });
   return { route, stopId };
+}
+
+export async function scheduleTaskOnProposedRoute(
+  ctx: MutationCtx,
+  task: Doc<"collectionTasks">,
+  routeId: Id<"routes">,
+  maximumStopCount: number,
+  actorUserId: Id<"users">,
+  now: number,
+) {
+  const { route, stopId } = await addTaskToProposedRoute(
+    ctx,
+    task._id,
+    routeId,
+    maximumStopCount,
+  );
+  await ctx.db.patch(task._id, {
+    status: "scheduled",
+    routeId: route._id,
+    scheduledAt: now,
+    statusUpdatedAt: now,
+  });
+  await syncLinkedReportTaskStatus(ctx, task, "scheduled", actorUserId, now);
+  await insertActivityEvent(
+    ctx,
+    "task_status_changed",
+    `Task ${task.displayId} scheduled on ${route.displayId}.`,
+    "collection_task",
+    task._id,
+    actorUserId,
+    "pending",
+    "scheduled",
+  );
+  await insertActivityEvent(
+    ctx,
+    "route_task_linked",
+    `Task ${task.displayId} added to proposed route ${route.displayId}.`,
+    "route",
+    route._id,
+    actorUserId,
+  );
+  return stopId;
 }
 
 export async function removeTaskFromProposedRoute(
