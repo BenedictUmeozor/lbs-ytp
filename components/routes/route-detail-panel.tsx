@@ -122,7 +122,7 @@ export function RouteDetailPanel({ detail }: { detail: RouteDetail }) {
               <span>{stop.sequenceNumber}.</span>
               <div className="min-w-0 flex-1">
                 <strong>{stop.taskDisplayId}</strong> · {stop.taskSourceType} ·{" "}
-                {stop.taskSourceReference ?? "—"}
+                {stop.sourceReference ?? "—"}
                 <br />
                 {stop.taskReason}
                 <br />

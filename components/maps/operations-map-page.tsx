@@ -143,20 +143,17 @@ export function OperationsMapPage() {
       handledRequestedSelection.current === `${requestedType}:${requestedId}`
     )
       return;
-    const entity =
-      requestedType === "bin"
-        ? data.bins.find((item) => item.id === requestedId)
-        : data.reports.find((item) => item.id === requestedId);
-    if (entity === undefined) return;
+    let selection: SelectedEntity | undefined;
+    if (requestedType === "bin") {
+      const entity = data.bins.find((item) => item.id === requestedId);
+      if (entity !== undefined) selection = { type: "bin", id: entity.id };
+    } else {
+      const entity = data.reports.find((item) => item.id === requestedId);
+      if (entity !== undefined) selection = { type: "report", id: entity.id };
+    }
+    if (selection === undefined) return;
     handledRequestedSelection.current = `${requestedType}:${requestedId}`;
-    const timeout = window.setTimeout(
-      () =>
-        select(
-          { type: requestedType as "bin" | "report", id: entity.id },
-          true,
-        ),
-      0,
-    );
+    const timeout = window.setTimeout(() => select(selection, true), 0);
     return () => window.clearTimeout(timeout);
   }, [data, requestedId, requestedType, select]);
   const selectedStillExists =
