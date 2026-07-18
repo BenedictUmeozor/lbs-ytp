@@ -510,7 +510,7 @@ function VehicleHealthCard({
             icon={Truck}
             action={{
               label: "Open Fleet & Maintenance",
-              href: "/dashboard/fleet?view=maintenance_alerts",
+              href: "/dashboard/fleet",
             }}
           />
         ) : (
@@ -554,7 +554,7 @@ function VehicleHealthCard({
               ))}
             </ul>
             <Link
-              href="/dashboard/fleet?view=maintenance_alerts"
+              href="/dashboard/fleet"
               className="text-primary inline-block text-sm font-medium hover:underline"
             >
               Open Fleet & Maintenance
