@@ -6,13 +6,13 @@ import { normalizeEmail } from "./domain/auth";
 import {
   demoBins,
   demoDevices,
-  demoMaintenanceAlerts,
   demoNotifications,
   demoReports,
   demoTasks,
   demoTrucks,
   globalSettings,
 } from "./domain/demo_data";
+import { applyApprovedMaintenanceScenario } from "./domain/maintenance";
 import {
   insertActivityEvent,
   insertNotification,
@@ -150,25 +150,36 @@ async function insertDemoDataset(
 
   const truckIds = new Map<string, Id<"trucks">>();
   for (const truck of demoTrucks) {
+    const health = truck.normalHealth;
     const truckId = await ctx.db.insert("trucks", {
       displayId: truck.displayId,
       driverName: truck.driverName,
-      status: truck.status,
+      status: "available",
       latitude: truck.latitude,
       longitude: truck.longitude,
       capacityPercentage: truck.capacityPercentage,
-      maintenanceRisk: truck.maintenanceRisk,
-      mileageSinceService: truck.mileageSinceService,
-      lastServiceAt: now - truck.lastServiceDaysAgo * DAY_IN_MILLISECONDS,
-      batteryPercentage: truck.batteryPercentage,
-      engineHealthScore: truck.engineHealthScore,
-      reportedFault: truck.reportedFault,
+      maintenanceRisk: "normal",
+      mileageSinceService: health?.mileageSinceService ?? 0,
+      lastServiceAt:
+        now - (health?.lastServiceDaysAgo ?? 0) * DAY_IN_MILLISECONDS,
+      batteryPercentage: health?.batteryPercentage ?? 100,
+      engineHealthScore: health?.engineHealthScore ?? 100,
       nextRecommendedServiceAt:
-        now + truck.nextRecommendedServiceDaysFromNow * DAY_IN_MILLISECONDS,
+        health === undefined
+          ? undefined
+          : now +
+            health.nextRecommendedServiceDaysFromNow * DAY_IN_MILLISECONDS,
       source: "simulated",
     });
     truckIds.set(truck.displayId, truckId);
   }
+
+  const mediumTruckId = truckIds.get("TRK-02");
+  const highTruckId = truckIds.get("TRK-03");
+  if (mediumTruckId === undefined || highTruckId === undefined)
+    throw new Error("Missing seeded maintenance scenario trucks.");
+  await applyApprovedMaintenanceScenario(ctx, mediumTruckId, "medium", now);
+  await applyApprovedMaintenanceScenario(ctx, highTruckId, "high", now);
 
   const binIds = new Map<string, Id<"bins">>();
   for (const bin of demoBins) {
@@ -348,29 +359,11 @@ async function insertDemoDataset(
     await ctx.db.patch("citizenReports", reportId, { linkedTaskId: taskId });
   }
 
-  const maintenanceAlertIds = new Map<string, Id<"maintenanceAlerts">>();
-  for (const alert of demoMaintenanceAlerts) {
-    const truckId = truckIds.get(alert.truckDisplayId);
-    if (truckId === undefined) {
-      throw new Error(`Missing seeded truck ${alert.truckDisplayId}.`);
-    }
-    const alertId = await ctx.db.insert("maintenanceAlerts", {
-      truckId,
-      risk: alert.risk,
-      reason: alert.reason,
-      recommendation: alert.recommendation,
-      simulated: alert.simulated,
-    });
-    maintenanceAlertIds.set(alert.truckDisplayId, alertId);
-  }
-
   for (const notification of demoNotifications) {
     const relatedEntityId =
       notification.relatedEntityType === "bin"
         ? binIds.get(notification.relatedEntityKey)
-        : notification.relatedEntityType === "citizen_report"
-          ? reportIds.get(notification.relatedEntityKey)
-          : truckIds.get(notification.relatedEntityKey);
+        : reportIds.get(notification.relatedEntityKey);
     if (relatedEntityId === undefined) {
       throw new Error(
         `Missing notification relationship for ${notification.title}.`,
@@ -510,13 +503,6 @@ async function insertDemoDataset(
     "WR-1006 was resolved.",
     "citizen_report",
     requireId(reportIds.get("WR-1006"), "WR-1006 report"),
-  );
-  await insertActivityEvent(
-    ctx,
-    "maintenance_alert_created",
-    "High-risk maintenance alert created for TRK-03.",
-    "maintenance_alert",
-    requireId(maintenanceAlertIds.get("TRK-03"), "TRK-03 maintenance alert"),
   );
 }
 

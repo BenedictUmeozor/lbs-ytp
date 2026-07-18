@@ -118,9 +118,7 @@ function simulationStatusLabel(data: ActiveRouteOperations) {
   if (phase === "at_collection_point")
     return `At collection point ${targetLabel}`;
   if (phase === "returning_to_depot") return "Returning to Bariga depot";
-  if (phase === "ready_to_complete")
-    return "Returned to depot — ready to complete";
-  return "Simulation state unavailable";
+  return "Returned to depot — ready to complete";
 }
 function Metric({ label, value }: { label: string; value: ReactNode }) {
   return (

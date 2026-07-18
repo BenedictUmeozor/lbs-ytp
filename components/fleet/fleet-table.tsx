@@ -49,18 +49,23 @@ export function FleetTable({
           {trucks.map((truck) => (
             <tr
               key={truck.id}
-              tabIndex={0}
-              aria-selected={selectedId === truck.id}
               onClick={() => onSelect(truck.id)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onSelect(truck.id);
-                }
-              }}
-              className={`hover:bg-muted/60 cursor-pointer border-b focus-visible:outline-2 focus-visible:outline-offset-[-2px] ${selectedId === truck.id ? "bg-muted" : ""}`}
+              className={`hover:bg-muted/60 cursor-pointer border-b ${selectedId === truck.id ? "bg-muted" : ""}`}
             >
-              <td className="p-3 font-medium">{truck.displayId}</td>
+              <td className="p-3 font-medium">
+                <button
+                  type="button"
+                  aria-label={`Open ${truck.displayId} details`}
+                  aria-pressed={selectedId === truck.id}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSelect(truck.id);
+                  }}
+                  className={`hover:text-primary focus-visible:ring-ring rounded-sm underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none ${selectedId === truck.id ? "text-primary underline" : ""}`}
+                >
+                  {truck.displayId}
+                </button>
+              </td>
               <td className="p-3">{truck.driverName}</td>
               <td className="p-3">
                 <StatusBadge status={truck.status} />

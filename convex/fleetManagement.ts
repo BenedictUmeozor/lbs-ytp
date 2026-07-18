@@ -58,8 +58,7 @@ function compactStop(
   };
 }
 
-async function locationLabel(
-  ctx: QueryCtx,
+function locationLabel(
   truck: Doc<"trucks">,
   route: Doc<"routes"> | null,
   stops: Awaited<ReturnType<typeof orderedStops>>,
@@ -103,7 +102,7 @@ async function fleetRow(
     status: truck.status,
     latitude: truck.latitude,
     longitude: truck.longitude,
-    locationLabel: await locationLabel(ctx, truck, route, stops, depot),
+    locationLabel: locationLabel(truck, route, stops, depot),
     assignedRoute:
       route === null
         ? null
@@ -234,7 +233,7 @@ export const getTruckDetail = query({
         nextRecommendedServiceAt: truck.nextRecommendedServiceAt,
       },
       location: {
-        label: await locationLabel(ctx, truck, route, stops, settings),
+        label: locationLabel(truck, route, stops, settings),
         latitude: truck.latitude,
         longitude: truck.longitude,
         simulated: truck.source === "simulated",

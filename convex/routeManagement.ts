@@ -1038,20 +1038,17 @@ export const getActiveRouteOperations = query({
       data.route.nextSimulationAt === undefined &&
       !paused;
     const validPendingMovement = validMovingStatus && !atTarget;
-    const phase =
-      paused && validPendingMovement
-        ? "paused"
-        : target.kind === "current_stop" &&
-            data.truck.status === "at_collection_point" &&
-            atTarget
-          ? "at_collection_point"
-          : target.kind === "current_stop" && validPendingMovement
-            ? "moving_to_stop"
-            : target.kind === "depot" && validPendingMovement
-              ? "returning_to_depot"
-              : readyToComplete
-                ? "ready_to_complete"
-                : "unavailable";
+    const phase = paused
+      ? "paused"
+      : operationalStop !== null &&
+          data.truck.status === "at_collection_point" &&
+          atTarget
+        ? "at_collection_point"
+        : operationalStop !== null
+          ? "moving_to_stop"
+          : readyToComplete
+            ? "ready_to_complete"
+            : "returning_to_depot";
     const targetLabel = operationalStop?.task.displayId ?? "Bariga depot";
     return {
       route: {

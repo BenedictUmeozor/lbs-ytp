@@ -3,7 +3,6 @@ import type {
   BinStatus,
   DataSource,
   DeviceStatus,
-  MaintenanceRisk,
   NotificationSeverity,
   NotificationType,
   Priority,
@@ -12,7 +11,6 @@ import type {
   ReportStatus,
   TaskSourceType,
   TaskStatus,
-  TruckStatus,
 } from "./validators";
 
 export const globalSettings = {
@@ -187,63 +185,46 @@ export const demoDevices: readonly DemoDevice[] = demoBins.map(
 type DemoTruck = {
   displayId: string;
   driverName: string;
-  status: TruckStatus;
   latitude: number;
   longitude: number;
   capacityPercentage: number;
-  maintenanceRisk: MaintenanceRisk;
-  mileageSinceService: number;
-  lastServiceDaysAgo: number;
-  batteryPercentage: number;
-  engineHealthScore: number;
-  reportedFault?: string;
-  nextRecommendedServiceDaysFromNow: number;
+  normalHealth?: {
+    mileageSinceService: number;
+    lastServiceDaysAgo: number;
+    batteryPercentage: number;
+    engineHealthScore: number;
+    nextRecommendedServiceDaysFromNow: number;
+  };
 };
 
 export const demoTrucks: readonly DemoTruck[] = [
   {
     displayId: "TRK-01",
     driverName: "Musa Ibrahim",
-    status: "available",
     latitude: globalSettings.depotLatitude,
     longitude: globalSettings.depotLongitude,
     capacityPercentage: 20,
-    maintenanceRisk: "normal",
-    mileageSinceService: 820,
-    lastServiceDaysAgo: 20,
-    batteryPercentage: 92,
-    engineHealthScore: 94,
-    nextRecommendedServiceDaysFromNow: 40,
+    normalHealth: {
+      mileageSinceService: 820,
+      lastServiceDaysAgo: 20,
+      batteryPercentage: 92,
+      engineHealthScore: 94,
+      nextRecommendedServiceDaysFromNow: 40,
+    },
   },
   {
     displayId: "TRK-02",
     driverName: "Chinedu Okafor",
-    status: "available",
     latitude: 6.5375,
     longitude: 3.389,
     capacityPercentage: 15,
-    maintenanceRisk: "medium",
-    mileageSinceService: 4650,
-    lastServiceDaysAgo: 82,
-    batteryPercentage: 76,
-    engineHealthScore: 72,
-    reportedFault: "Approaching service interval",
-    nextRecommendedServiceDaysFromNow: 5,
   },
   {
     displayId: "TRK-03",
     driverName: "Tunde Balogun",
-    status: "maintenance",
     latitude: globalSettings.depotLatitude,
     longitude: globalSettings.depotLongitude,
     capacityPercentage: 0,
-    maintenanceRisk: "high",
-    mileageSinceService: 7900,
-    lastServiceDaysAgo: 145,
-    batteryPercentage: 41,
-    engineHealthScore: 48,
-    reportedFault: "Simulated battery anomaly and overdue service",
-    nextRecommendedServiceDaysFromNow: 0,
   },
 ];
 
@@ -454,29 +435,12 @@ export const demoTasks: readonly DemoTask[] = [
   },
 ];
 
-export const demoMaintenanceAlerts = [
-  {
-    truckDisplayId: "TRK-02",
-    risk: "medium" as MaintenanceRisk,
-    reason: "Approaching service interval",
-    recommendation: "Inspect after current operations",
-    simulated: true,
-  },
-  {
-    truckDisplayId: "TRK-03",
-    risk: "high" as MaintenanceRisk,
-    reason: "Simulated battery anomaly and overdue service",
-    recommendation: "Keep unavailable and schedule inspection",
-    simulated: true,
-  },
-] as const;
-
 export const demoNotifications: readonly {
   type: NotificationType;
   severity: NotificationSeverity;
   title: string;
   description: string;
-  relatedEntityType: "bin" | "citizen_report" | "truck";
+  relatedEntityType: "bin" | "citizen_report";
   relatedEntityKey: string;
 }[] = [
   {
@@ -510,13 +474,5 @@ export const demoNotifications: readonly {
     description: "Overflowing waste is obstructing part of the road.",
     relatedEntityType: "citizen_report",
     relatedEntityKey: "WR-1001",
-  },
-  {
-    type: "maintenance_high_risk",
-    severity: "critical",
-    title: "TRK-03 has high maintenance risk",
-    description: "Keep the simulated truck unavailable pending inspection.",
-    relatedEntityType: "truck",
-    relatedEntityKey: "TRK-03",
   },
 ];

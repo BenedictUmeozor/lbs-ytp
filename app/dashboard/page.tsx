@@ -498,8 +498,8 @@ function VehicleHealthCard({
       <CardHeader>
         <CardTitle>Prototype vehicle health</CardTitle>
         <CardDescription>
-          Prototype vehicle-health data — simulated. Not real telemetry or real
-          predictive maintenance.
+          Prototype vehicle-health information based on approved simulated
+          maintenance scenarios.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

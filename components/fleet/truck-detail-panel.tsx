@@ -228,8 +228,8 @@ export function TruckDetailPanel({
               Prototype Vehicle Health Monitoring — based on simulated data.
             </h3>
             <p className="text-muted-foreground mt-1 text-sm">
-              Read-only proof-of-concept values; not real telemetry or
-              predictive diagnostics.
+              Read-only proof-of-concept values; not operational measurements or
+              diagnostics.
             </p>
           </div>
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -287,7 +287,9 @@ export function TruckDetailPanel({
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={alert.risk} />
-                    <Badge variant="outline">Simulated</Badge>
+                    {alert.simulated ? (
+                      <Badge variant="outline">Simulated</Badge>
+                    ) : null}
                     <Badge variant="secondary">
                       {alert.resolvedAt === undefined ? "Open" : "Resolved"}
                     </Badge>
