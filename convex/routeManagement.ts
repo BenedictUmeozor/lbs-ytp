@@ -5,7 +5,8 @@ import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/s
 import { calculateRouteMetrics, DEMO_AVERAGE_SPEED_KM_PER_HOUR, hasValidRouteCoordinates, orderRouteTasks, type RouteTask } from "./domain/route_algorithm";
 import { requireFleetManager } from "./domain/auth";
 import { canAssignRoute, canCancelRoute, canCompleteRoute, canConfirmReoptimisation, canEditProposedRoute, canStartRoute, isOpenRouteStatus, isUrgentReoptimisationCandidate, isTerminalRouteStopStatus } from "./domain/route_rules";
-import { calculateRemainingRouteMetrics, changedStopIds, isNearRemainingRoute, operationalCurrentStopIndex, proposedOrderedTaskIds, remainingRoutePointDistanceMeters, routeTask, splitRouteStops } from "./domain/route_reoptimisation";
+import { buildReoptimisationStateSnapshot, calculateRemainingRouteMetrics, changedStopIds, isNearRemainingRoute, nextOperationalStopIndex, operationalCurrentStopIndex, proposedOrderedTaskIds, remainingRoutePointDistanceMeters, reoptimisationSnapshotsMatch, routeTask, splitRouteStops } from "./domain/route_reoptimisation";
+import { priorityValidator, routeStopStatusValidator, taskStatusValidator } from "./domain/validators";
 import { recalculateProposedRouteMetrics, returnTaskToPendingFromProposedRoute, scheduleTaskOnProposedRoute } from "./domain/route_task_helpers";
 import { syncLinkedReportTaskStatus } from "./domain/task_helpers";
 import { insertActivityEvent } from "./domain/write_helpers";
@@ -33,6 +34,14 @@ async function sourceDetails(ctx: QueryCtx, task: Doc<"collectionTasks">) { cons
 async function routeStops(ctx: QueryCtx | MutationCtx, routeId: Id<"routes">) { return ctx.db.query("routeStops").withIndex("by_routeId_and_sequenceNumber", (q) => q.eq("routeId", routeId)).order("asc").collect(); }
 async function routeTasks(ctx: MutationCtx, stops: readonly Doc<"routeStops">[]) { const tasks = await Promise.all(stops.map((stop) => ctx.db.get(stop.taskId))); if (tasks.some((task) => task === null)) fail("TASK_UNAVAILABLE", "A route task is unavailable."); return tasks as Doc<"collectionTasks">[]; }
 function cancellationReason(reason: string) { const value = reason.trim(); if (value.length < 3 || value.length > 240) fail("CANCELLATION_REASON_REQUIRED", "Enter a cancellation reason between 3 and 240 characters."); return value; }
+
+const reoptimisationStateEntryValidator = v.object({
+  stopId: v.id("routeStops"),
+  stopStatus: routeStopStatusValidator,
+  taskId: v.id("collectionTasks"),
+  taskStatus: taskStatusValidator,
+  taskPriority: priorityValidator,
+});
 
 export const getRouteBuilderData = query({ args: {}, handler: async (ctx) => { await requireFleetManager(ctx); const [settings, trucks, tasks] = await Promise.all([ctx.db.query("settings").withIndex("by_key", (q) => q.eq("key", "global")).unique(), ctx.db.query("trucks").withIndex("by_status", (q) => q.eq("status", "available")).collect(), ctx.db.query("collectionTasks").withIndex("by_status", (q) => q.eq("status", "pending")).collect()]); if (settings === null) fail("SETTINGS_UNAVAILABLE", "Route settings are unavailable."); const eligibleTrucks = (await Promise.all(trucks.map(async (truck) => ({ truck, hasOpenRoute: await hasOpenRouteForTruck(ctx, truck._id) })))).filter(({ truck, hasOpenRoute }) => truck.assignedRouteId === undefined && !hasOpenRoute).map(({ truck }) => ({ id: truck._id, displayId: truck.displayId, driverName: truck.driverName, status: truck.status, maintenanceRisk: truck.maintenanceRisk, latitude: truck.latitude, longitude: truck.longitude, capacityPercentage: truck.capacityPercentage, source: truck.source })); const priorityRank = { critical: 0, high: 1, medium: 2, low: 3 }; const eligibleTasks = await Promise.all(tasks.filter((task) => task.routeId === undefined && hasValidRouteCoordinates({ latitude: task.latitude, longitude: task.longitude })).sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority] || left._creationTime - right._creationTime || left.displayId.localeCompare(right.displayId)).map(async (task) => ({ id: task._id, displayId: task.displayId, sourceType: task.sourceType, ...(await sourceDetails(ctx, task)), latitude: task.latitude, longitude: task.longitude, priority: task.priority, reason: task.reason, createdAt: task._creationTime }))); return { settings: { depotLatitude: settings.depotLatitude, depotLongitude: settings.depotLongitude, maximumRouteStops: settings.maximumRouteStops, effectiveMaximumStops: effectiveMaximumStops(settings.maximumRouteStops), trafficPenaltyMinutes: settings.trafficPenaltyMinutes, roadConditionPenaltyMinutes: settings.roadConditionPenaltyMinutes, averageSpeedKmPerHour: DEMO_AVERAGE_SPEED_KM_PER_HOUR }, trucks: eligibleTrucks, tasks: eligibleTasks }; } });
 
@@ -90,6 +99,7 @@ export const getActiveRouteOperations = query({ args: {}, handler: async (ctx) =
   const maximumStopCount = settings === null ? MAXIMUM_ROUTE_STOPS : effectiveMaximumStops(settings.maximumRouteStops);
   const { split, metrics } = activeRouteMetrics(data);
   const currentIndex = split.operationalCurrentIndex;
+  const nextIndex = nextOperationalStopIndex(data.stops, currentIndex);
   const candidates = (await Promise.all(
     (await ctx.db.query("collectionTasks").withIndex("by_status_and_priority", (q) => q.eq("status", "pending").eq("priority", "critical")).collect())
       .filter(isUrgentReoptimisationCandidate)
@@ -102,8 +112,8 @@ export const getActiveRouteOperations = query({ args: {}, handler: async (ctx) =
   return {
     route: { id: data.route._id, displayId: data.route.displayId, status: data.route.status, depotLatitude: data.route.depotLatitude, depotLongitude: data.route.depotLongitude, estimatedDistanceKm: data.route.estimatedDistanceKm, estimatedDurationMinutes: data.route.estimatedDurationMinutes, trafficPenaltyMinutes: data.route.trafficPenaltyMinutes, roadConditionPenaltyMinutes: data.route.roadConditionPenaltyMinutes, startedAt: data.route.startedAt },
     truck: { id: data.truck._id, displayId: data.truck.displayId, driverName: data.truck.driverName, status: data.truck.status, latitude: data.truck.latitude, longitude: data.truck.longitude, source: data.truck.source, locationLabel: data.truck.source === "simulated" ? "Simulated truck location" : "Static operational truck location" },
-    stops: data.stops.map(({ stop, task }, index) => ({ id: stop._id, sequenceNumber: stop.sequenceNumber, status: stop.status, taskId: task._id, taskDisplayId: task.displayId, taskPriority: task.priority, taskStatus: task.status, reason: task.reason, latitude: task.latitude, longitude: task.longitude, completedAt: stop.completedAt, isTerminal: isTerminalRouteStopStatus(stop.status), isOperationalCurrent: index === currentIndex, isNext: index === currentIndex + 1, isRemaining: index >= currentIndex && !isTerminalRouteStopStatus(stop.status) })),
-    progress: { totalStops: data.stops.length, completedStopCount: data.stops.filter(({ stop }) => stop.status === "completed").length, unableStopCount: data.stops.filter(({ stop }) => stop.status === "unable_to_complete").length, terminalStopCount: data.stops.filter(({ stop }) => isTerminalRouteStopStatus(stop.status)).length, remainingStopCount: data.stops.filter(({ stop }) => !isTerminalRouteStopStatus(stop.status)).length, progressPercentage: data.stops.length === 0 ? 0 : Math.round((data.stops.filter(({ stop }) => isTerminalRouteStopStatus(stop.status)).length / data.stops.length) * 100), operationalCurrentStopId: split.operationalCurrent?.stop._id, nextStopId: currentIndex < 0 ? undefined : data.stops.at(currentIndex + 1)?.stop._id, ...metrics },
+    stops: data.stops.map(({ stop, task }, index) => ({ id: stop._id, sequenceNumber: stop.sequenceNumber, status: stop.status, taskId: task._id, taskDisplayId: task.displayId, taskPriority: task.priority, taskStatus: task.status, reason: task.reason, latitude: task.latitude, longitude: task.longitude, completedAt: stop.completedAt, isTerminal: isTerminalRouteStopStatus(stop.status), isOperationalCurrent: index === currentIndex, isNext: index === nextIndex, isRemaining: index >= currentIndex && !isTerminalRouteStopStatus(stop.status) })),
+    progress: { totalStops: data.stops.length, completedStopCount: data.stops.filter(({ stop }) => stop.status === "completed").length, unableStopCount: data.stops.filter(({ stop }) => stop.status === "unable_to_complete").length, terminalStopCount: data.stops.filter(({ stop }) => isTerminalRouteStopStatus(stop.status)).length, remainingStopCount: data.stops.filter(({ stop }) => !isTerminalRouteStopStatus(stop.status)).length, progressPercentage: data.stops.length === 0 ? 0 : Math.round((data.stops.filter(({ stop }) => isTerminalRouteStopStatus(stop.status)).length / data.stops.length) * 100), operationalCurrentStopId: split.operationalCurrent?.stop._id, nextStopId: nextIndex < 0 ? undefined : data.stops[nextIndex].stop._id, ...metrics },
     candidates,
   };
 } });
@@ -130,21 +140,22 @@ export const getReoptimisationPreview = query({ args: { routeId: v.id("routes"),
   const proposedRemainingMetrics = calculateRemainingRouteMetrics(data.truck, split.operationalCurrent, proposedFuture, data.stops.length + 1, data.stops.filter(({ stop }) => !isTerminalRouteStopStatus(stop.status)).length + 1, data.route.trafficPenaltyMinutes, data.route.roadConditionPenaltyMinutes);
   const distanceMeters = remainingRoutePointDistanceMeters(candidate, data.truck, split.operationalCurrent, data.stops);
   const currentTaskIds = data.stops.map(({ task }) => task._id);
-  return { routeId: data.route._id, candidate: { id: candidate._id, displayId: candidate.displayId, priority: candidate.priority, reason: candidate.reason, latitude: candidate.latitude, longitude: candidate.longitude }, distanceMeters, isNearRoute: isNearRemainingRoute(distanceMeters), fixedTerminalStops: split.terminal.map(({ stop }) => stop._id), operationalCurrentStop: split.operationalCurrent.stop._id, existingFutureOrder: split.futurePending.map(({ stop }) => stop._id), proposedFutureOrder: proposedTaskIds.slice(split.operationalCurrentIndex + 1), completeProposedTaskOrder: proposedTaskIds, movedTaskIds: changedStopIds(currentTaskIds, proposedTaskIds), currentRemainingMetrics, proposedRemainingMetrics, currentFullRouteMetrics: { distanceKm: data.route.estimatedDistanceKm, durationMinutes: data.route.estimatedDurationMinutes }, proposedFullRouteMetrics: calculateRouteMetrics({ latitude: data.route.depotLatitude, longitude: data.route.depotLongitude }, proposedTasks.map(routeTask), data.route.trafficPenaltyMinutes, data.route.roadConditionPenaltyMinutes), explanation: `The operational current stop remains fixed. ${candidate.displayId} is added after it and only later pending stops are reordered.`, expectedOrderedStopIds: data.stops.map(({ stop }) => stop._id), expectedCurrentStopIndex: split.operationalCurrentIndex };
+  return { routeId: data.route._id, candidate: { id: candidate._id, displayId: candidate.displayId, priority: candidate.priority, reason: candidate.reason, latitude: candidate.latitude, longitude: candidate.longitude }, distanceMeters, isNearRoute: isNearRemainingRoute(distanceMeters), fixedTerminalStops: split.terminal.map(({ stop }) => stop._id), operationalCurrentStop: split.operationalCurrent.stop._id, existingFutureOrder: split.futurePending.map(({ stop }) => stop._id), proposedFutureOrder: proposedTaskIds.slice(split.operationalCurrentIndex + 1), completeProposedTaskOrder: proposedTaskIds, movedTaskIds: changedStopIds(currentTaskIds, proposedTaskIds), currentRemainingMetrics, proposedRemainingMetrics, currentFullRouteMetrics: { distanceKm: data.route.estimatedDistanceKm, durationMinutes: data.route.estimatedDurationMinutes }, proposedFullRouteMetrics: calculateRouteMetrics({ latitude: data.route.depotLatitude, longitude: data.route.depotLongitude }, proposedTasks.map(routeTask), data.route.trafficPenaltyMinutes, data.route.roadConditionPenaltyMinutes), explanation: `The operational current stop remains fixed. ${candidate.displayId} is added after it and only later pending stops are reordered.`, expectedOrderedStopIds: data.stops.map(({ stop }) => stop._id), expectedRouteState: buildReoptimisationStateSnapshot(data.stops), proposedTaskOrder: proposedTaskIds, expectedCurrentStopIndex: split.operationalCurrentIndex };
 } });
 
-export const confirmReoptimisation = mutation({ args: { routeId: v.id("routes"), candidateTaskId: v.id("collectionTasks"), expectedOrderedStopIds: v.array(v.id("routeStops")), expectedCurrentStopIndex: v.number() }, handler: async (ctx, args) => {
+export const confirmReoptimisation = mutation({ args: { routeId: v.id("routes"), candidateTaskId: v.id("collectionTasks"), expectedRouteState: v.array(reoptimisationStateEntryValidator), proposedTaskOrder: v.array(v.id("collectionTasks")), expectedCurrentStopIndex: v.number(), expectedCandidateLatitude: v.number(), expectedCandidateLongitude: v.number() }, handler: async (ctx, args) => {
   const { user } = await requireFleetManager(ctx);
   const data = await activeRouteData(ctx);
   const candidate = await ctx.db.get(args.candidateTaskId);
   if (data === null || data.route._id !== args.routeId || data.route.status !== "active" || data.truck.status !== "on_route" || data.truck.assignedRouteId !== data.route._id) fail("REOPTIMISATION_UNAVAILABLE", "Route re-optimisation is unavailable.");
   const activeRoutes = await ctx.db.query("routes").withIndex("by_status", (q) => q.eq("status", "active")).collect();
   if (activeRoutes.length !== 1) fail("REOPTIMISATION_UNAVAILABLE", "Route re-optimisation requires one active route.");
-  if (candidate === null || !isUrgentReoptimisationCandidate(candidate)) fail("REOPTIMISATION_CANDIDATE_INVALID", "This critical task is no longer eligible for route review.");
+  if (candidate === null || !isUrgentReoptimisationCandidate(candidate) || candidate.latitude !== args.expectedCandidateLatitude || candidate.longitude !== args.expectedCandidateLongitude) fail("REOPTIMISATION_CANDIDATE_INVALID", "This critical task is no longer eligible for route review.");
   const settings = await ctx.db.query("settings").withIndex("by_key", (q) => q.eq("key", "global")).unique();
   const maximumStopCount = settings === null ? MAXIMUM_ROUTE_STOPS : effectiveMaximumStops(settings.maximumRouteStops);
   if (data.stops.length >= maximumStopCount) fail("REOPTIMISATION_ROUTE_FULL", "The active route is at its stop limit.");
-  const persistedIds = data.stops.map(({ stop }) => stop._id);
+  const stale = () => fail("REOPTIMISATION_PREVIEW_STALE", "The route changed after this preview. Generate a new preview before confirming.");
+  const currentSnapshot = buildReoptimisationStateSnapshot(data.stops);
   const currentIndex = operationalCurrentStopIndex(data.stops);
   const routeTasksConsistent = data.stops.every(({ stop, task }) =>
     task.routeId === data.route._id &&
@@ -155,9 +166,16 @@ export const confirmReoptimisation = mutation({ args: { routeId: v.id("routes"),
         ? task.status === "unable_to_complete"
         : task.status === "en_route"),
   );
-  if (!routeTasksConsistent || persistedIds.length !== args.expectedOrderedStopIds.length || persistedIds.some((id, index) => id !== args.expectedOrderedStopIds[index]) || currentIndex !== args.expectedCurrentStopIndex) fail("REOPTIMISATION_PREVIEW_STALE", "The route changed. Generate a new preview.");
-  const proposedTaskIds = proposedOrderedTaskIds(data.stops, candidate);
-  if (currentIndex < 0 || proposedTaskIds === null) fail("REOPTIMISATION_CURRENT_STOP_UNAVAILABLE", "The active route has no operational current stop.");
+  if (!routeTasksConsistent || !reoptimisationSnapshotsMatch(currentSnapshot, args.expectedRouteState)) stale();
+  const recalculatedProposal = proposedOrderedTaskIds(data.stops, candidate);
+  if (currentIndex < 0 || recalculatedProposal === null) fail("REOPTIMISATION_CURRENT_STOP_UNAVAILABLE", "The active route has no operational current stop.");
+  if (currentIndex !== args.expectedCurrentStopIndex || recalculatedProposal.length !== args.proposedTaskOrder.length || recalculatedProposal.some((taskId, index) => taskId !== args.proposedTaskOrder[index])) stale();
+  const expectedTaskIds = new Set([...data.stops.map(({ task }) => task._id), candidate._id]);
+  const submittedTaskIds = new Set(args.proposedTaskOrder);
+  if (submittedTaskIds.size !== args.proposedTaskOrder.length || submittedTaskIds.size !== expectedTaskIds.size || args.proposedTaskOrder.some((taskId) => !expectedTaskIds.has(taskId))) stale();
+  const taskById = new Map(data.stops.map(({ task }) => [task._id, task] as const));
+  taskById.set(candidate._id, candidate);
+  if (args.proposedTaskOrder.some((taskId) => !taskById.has(taskId))) stale();
   const split = splitRouteStops(data.stops);
   if (!canConfirmReoptimisation(data.route, split.operationalCurrent !== null, data.stops.length, maximumStopCount, candidate)) fail("REOPTIMISATION_UNAVAILABLE", "Route re-optimisation is unavailable.");
   const now = Date.now();
@@ -173,13 +191,9 @@ export const confirmReoptimisation = mutation({ args: { routeId: v.id("routes"),
   const newStopId = await ctx.db.insert("routeStops", { routeId: data.route._id, taskId: candidate._id, sequenceNumber: data.stops.length + 1, status: "pending" });
   const stopIdByTaskId = new Map(data.stops.map(({ stop, task }) => [task._id, stop._id]));
   stopIdByTaskId.set(candidate._id, newStopId);
-  const orderedStopIds = proposedTaskIds.map((taskId) => stopIdByTaskId.get(taskId)).filter((id): id is Id<"routeStops"> => id !== undefined);
+  const orderedStopIds = args.proposedTaskOrder.map((taskId) => stopIdByTaskId.get(taskId)!);
   for (const [index, stopId] of orderedStopIds.entries()) await ctx.db.patch(stopId, { sequenceNumber: index + 1 });
-  const orderedTasks = proposedTaskIds.map((taskId) =>
-    taskId === candidate._id
-      ? candidate
-      : data.stops.find(({ task }) => task._id === taskId)!.task,
-  );
+  const orderedTasks = args.proposedTaskOrder.map((taskId) => taskById.get(taskId)!);
   const fullMetrics = calculateRouteMetrics({ latitude: data.route.depotLatitude, longitude: data.route.depotLongitude }, orderedTasks.map(routeTask), data.route.trafficPenaltyMinutes, data.route.roadConditionPenaltyMinutes);
   await ctx.db.patch(data.route._id, { orderedStopIds, currentStopIndex: orderedStopIds.indexOf(data.stops[currentIndex].stop._id), estimatedDistanceKm: fullMetrics.totalDistanceKm, estimatedDurationMinutes: fullMetrics.estimatedDurationMinutes });
   const notifications = await ctx.db.query("notifications").withIndex("by_relatedEntityType_and_relatedEntityId", (q) => q.eq("relatedEntityType", "collection_task").eq("relatedEntityId", candidate._id)).collect();

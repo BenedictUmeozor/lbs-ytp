@@ -13,6 +13,14 @@ export const ROUTE_REVIEW_RADIUS_METERS = 1_000;
 
 type StopWithTask = { stop: Doc<"routeStops">; task: Doc<"collectionTasks"> };
 
+export type ReoptimisationStateSnapshotEntry = {
+  stopId: Id<"routeStops">;
+  stopStatus: Doc<"routeStops">["status"];
+  taskId: Id<"collectionTasks">;
+  taskStatus: Doc<"collectionTasks">["status"];
+  taskPriority: Doc<"collectionTasks">["priority"];
+};
+
 export type StopSplit = {
   operationalCurrentIndex: number;
   terminal: StopWithTask[];
@@ -38,10 +46,46 @@ export function routeTask(task: Doc<"collectionTasks">): RouteTask {
   };
 }
 
+export function buildReoptimisationStateSnapshot(
+  stops: readonly StopWithTask[],
+): ReoptimisationStateSnapshotEntry[] {
+  return stops.map(({ stop, task }) => ({
+    stopId: stop._id,
+    stopStatus: stop.status,
+    taskId: task._id,
+    taskStatus: task.status,
+    taskPriority: task.priority,
+  }));
+}
+
+export function reoptimisationSnapshotsMatch(
+  left: readonly ReoptimisationStateSnapshotEntry[],
+  right: readonly ReoptimisationStateSnapshotEntry[],
+) {
+  return left.length === right.length && left.every((entry, index) => {
+    const other = right[index];
+    return entry.stopId === other.stopId &&
+      entry.stopStatus === other.stopStatus &&
+      entry.taskId === other.taskId &&
+      entry.taskStatus === other.taskStatus &&
+      entry.taskPriority === other.taskPriority;
+  });
+}
+
 export function operationalCurrentStopIndex(stops: readonly StopWithTask[]) {
   const markedCurrent = stops.findIndex(({ stop }) => stop.status === "current");
   if (markedCurrent >= 0) return markedCurrent;
   return stops.findIndex(({ stop }) => !isTerminalRouteStopStatus(stop.status));
+}
+
+export function nextOperationalStopIndex(
+  stops: readonly StopWithTask[],
+  currentIndex = operationalCurrentStopIndex(stops),
+) {
+  if (currentIndex < 0) return -1;
+  return stops.findIndex(
+    ({ stop }, index) => index > currentIndex && !isTerminalRouteStopStatus(stop.status),
+  );
 }
 
 export function splitRouteStops(stops: readonly StopWithTask[]): StopSplit {

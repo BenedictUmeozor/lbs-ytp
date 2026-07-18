@@ -8,7 +8,7 @@ import {
   getRouteOperationalRecord,
 } from "./domain/read_helpers";
 import { hasOperationalReportLocation } from "./domain/report_rules";
-import { calculateRemainingRouteMetrics, splitRouteStops } from "./domain/route_reoptimisation";
+import { calculateRemainingRouteMetrics, nextOperationalStopIndex, splitRouteStops } from "./domain/route_reoptimisation";
 import { isTerminalRouteStopStatus } from "./domain/route_rules";
 import {
   binStatusValidator,
@@ -185,6 +185,7 @@ async function getMapData(ctx: QueryCtx) {
           const { route: currentRoute, stops } = activeRouteRecord;
           const split = splitRouteStops(stops);
           const currentIndex = split.operationalCurrentIndex;
+          const nextIndex = nextOperationalStopIndex(stops, currentIndex);
           const completedStopCount = stops.filter(
             ({ stop }) => stop.status === "completed",
           ).length;
@@ -231,7 +232,7 @@ async function getMapData(ctx: QueryCtx) {
             remainingStopCount: stops.length - terminalStopCount,
             progressPercentage: stops.length === 0 ? 0 : Math.round((terminalStopCount / stops.length) * 100),
             operationalCurrentStopId: split.operationalCurrent?.stop._id,
-            nextStopId: currentIndex < 0 ? undefined : stops.at(currentIndex + 1)?.stop._id,
+            nextStopId: nextIndex < 0 ? undefined : stops[nextIndex].stop._id,
             remainingDistanceKm: remaining?.remainingDistanceKm,
             remainingBaseTravelMinutes: remaining?.baseTravelMinutes,
             remainingTrafficPenaltyMinutes: remaining?.remainingTrafficPenaltyMinutes,
@@ -250,7 +251,7 @@ async function getMapData(ctx: QueryCtx) {
               completedAt: stop.completedAt,
               isTerminal: isTerminalRouteStopStatus(stop.status),
               isOperationalCurrent: index === currentIndex,
-              isNext: index === currentIndex + 1,
+              isNext: index === nextIndex,
               isRemaining: index >= currentIndex && !isTerminalRouteStopStatus(stop.status),
             })),
           };
@@ -332,7 +333,7 @@ async function getMapData(ctx: QueryCtx) {
           : routesById.get(truck.assignedRouteId)?.displayId,
       currentStopNumber:
         truck._id === activeRoute?.truckId
-          ? activeRoute.currentStopIndex + 1
+          ? activeRoute.stops.find((stop) => stop.isOperationalCurrent)?.sequenceNumber
           : undefined,
       remainingStopCount:
         truck._id === activeRoute?.truckId

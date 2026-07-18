@@ -12,6 +12,7 @@ import {
   binStatusValidator,
   dataSourceValidator,
   maintenanceRiskValidator,
+  notificationTypeValidator,
   priorityValidator,
   relatedEntityIdValidator,
   relatedEntityTypeValidator,
@@ -259,6 +260,7 @@ const criticalAlertSeverityValidator = v.union(
 const criticalAlertValidator = v.object({
   id: v.id("notifications"),
   severity: criticalAlertSeverityValidator,
+  type: notificationTypeValidator,
   title: v.string(),
   description: v.string(),
   relatedEntityType: relatedEntityTypeValidator,
@@ -291,6 +293,7 @@ async function buildCriticalAlerts(ctx: QueryCtx) {
   return relevant.slice(0, 5).map((notification) => ({
     id: notification._id,
     severity: notification.severity,
+    type: notification.type,
     title: notification.title,
     description: notification.description,
     relatedEntityType: notification.relatedEntityType,

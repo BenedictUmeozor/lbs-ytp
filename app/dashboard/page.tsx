@@ -247,10 +247,17 @@ function CriticalAlertsCard({
                     {formatDateTime(alert.createdAt)}
                   </span>
                 </div>
-                {alert.relatedEntityType === "collection_task" ? (
+                {alert.type === "route_reoptimisation_suggested" ? (
                   <Link
                     className="text-foreground text-sm font-medium underline"
                     href={`/dashboard/routes?candidate=${alert.relatedEntityId}`}
+                  >
+                    {alert.title}
+                  </Link>
+                ) : alert.relatedEntityType === "collection_task" ? (
+                  <Link
+                    className="text-foreground text-sm font-medium underline"
+                    href={`/dashboard/tasks?selected=${alert.relatedEntityId}`}
                   >
                     {alert.title}
                   </Link>

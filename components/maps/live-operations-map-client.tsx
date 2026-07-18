@@ -38,10 +38,16 @@ function depotIcon() {
     iconAnchor: [24, 14],
   });
 }
-function stopIcon(sequence: number, isCompleted: boolean, isCurrent: boolean, isSelected: boolean) {
+function stopIcon(sequence: number, isTerminal: boolean, isCurrent: boolean, isNext: boolean, isSelected: boolean) {
+  const classes = [
+    isTerminal ? "operations-map-stop-completed" : "",
+    isCurrent ? "operations-map-stop-current" : "",
+    isNext ? "operations-map-stop-next" : "",
+    isSelected ? "operations-map-selected" : "",
+  ].filter(Boolean).join(" ");
   return divIcon({
     className: "operations-map-stop-icon",
-    html: `<span class="${isCompleted ? "operations-map-stop-completed" : ""} ${isCurrent ? "operations-map-selected" : ""} ${isSelected ? "operations-map-selected" : ""}">${sequence}</span>`,
+    html: `<span class="${classes}">${sequence}</span>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
@@ -106,6 +112,15 @@ export function LiveOperationsMapClient({
   onSelect: (selection: SelectedEntity) => void;
 }) {
   const route = data.activeRoute;
+  const fullRoutePath: [number, number][] = route === null ? [] : [
+    [route.depotLatitude, route.depotLongitude],
+    ...route.stops.map((stop) => [stop.latitude, stop.longitude] as [number, number]),
+  ];
+  const currentStopIndex = route?.stops.findIndex((stop) => stop.isOperationalCurrent) ?? -1;
+  const traversedRoutePath = currentStopIndex < 0 ? [] : fullRoutePath.slice(0, currentStopIndex + 2);
+  const remainingRoutePath: [number, number][] = route === null || currentStopIndex < 0
+    ? []
+    : route.stops.slice(currentStopIndex).map((stop) => [stop.latitude, stop.longitude]);
   const points: [number, number][] = [
     ...(visible.depot
       ? [[data.depot.latitude, data.depot.longitude] as [number, number]]
@@ -144,8 +159,13 @@ export function LiveOperationsMapClient({
       />
       {visible.route && route !== null && (
         <>
-          <Polyline positions={[[route.depotLatitude, route.depotLongitude] as [number, number], ...route.stops.filter((stop) => stop.isTerminal).map((stop) => [stop.latitude, stop.longitude] as [number, number])]} pathOptions={{ color: "#6b7280", weight: 3, dashArray: "4 6" }} />
-          <Polyline positions={[[route.depotLatitude, route.depotLongitude] as [number, number], ...route.stops.filter((stop) => !stop.isTerminal).map((stop) => [stop.latitude, stop.longitude] as [number, number])]} pathOptions={{ color: "#2563eb", weight: 3, dashArray: "6 6" }} />
+          <Polyline positions={fullRoutePath} pathOptions={{ color: "#94a3b8", weight: 3 }} />
+          {traversedRoutePath.length > 1 && (
+            <Polyline positions={traversedRoutePath} pathOptions={{ color: "#475569", weight: 4 }} />
+          )}
+          {remainingRoutePath.length > 1 && (
+            <Polyline positions={remainingRoutePath} pathOptions={{ color: "#2563eb", weight: 4, dashArray: "6 6" }} />
+          )}
         </>
       )}
       {visible.depot && (
@@ -246,6 +266,7 @@ export function LiveOperationsMapClient({
             stop.sequenceNumber,
             stop.isTerminal,
             stop.isOperationalCurrent,
+            stop.isNext,
             selected(selection, "routeStop", stop.id),
           )}
           eventHandlers={{
