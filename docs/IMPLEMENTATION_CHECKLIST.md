@@ -59,7 +59,7 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 ## 2. Current Status
 
 * **Current phase:** Phase 10
-* **Current milestone:** Truck Simulation, Fleet and Maintenance
+* **Current milestone:** Fleet Table and Truck Detail
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -155,6 +155,7 @@ Update this table after completing each phase.
 | Phase 9A | Complete | 2026-07-16 | The protected route-builder query, deterministic priority-and-distance algorithm, and atomic proposed-route generation are complete. Selected tasks become scheduled, linked reports are synchronised, and protected route list/detail queries are available. A proposed route reserves its selected truck only through the route record; the truck is not assigned or status-changed yet. The correction ensures removing a proposed stop recalculates distance and duration while preserving remaining order, prevents removing the final proposed stop, returns the correct routed-task validation error, and keeps re-optimisation exclusively in Phase 9C. Adding a task to an existing proposed route now recalculates route distance and duration while preserving the existing order and appending the added task. |
 | Phase 9B | Complete | 2026-07-16 | Route-builder UI is complete. Proposed routes can be generated and reviewed, and their order can be manually adjusted. Adding and removing stops recalculates route metrics. Routes can be assigned, started, cancelled while proposed, and completed when terminal; completed route history is preserved. Assigned-route tasks can no longer become unable before the route starts; final proposed-stop task actions are hidden and server protected; route lifecycle actions are locked against overlapping submissions. |
 | Phase 9C | Complete | 2026-07-16 | Active routes are visible on the Routes and Map pages. Current, next, terminal and remaining stops plus remaining metrics are derived live without new schema fields. Critical tasks create deduplicated route-review notifications. Re-optimisation requires manager preview and confirmation, keeps terminal and operational-current stops fixed, and reorders only future Pending stops. Confirmation verifies the exact previewed stop/task state and persists the exact reviewed proposed order; stop-status, task-status and priority changes invalidate stale previews. Next-stop derivation skips terminal stops, map lines preserve the real ordered sequence, and only route-reoptimisation notifications open candidate review. Confirmed candidates move through the approved lifecycle. No automatic route changes or truck movement were introduced; Phase 10 owns truck simulation and persisted route progression. |
+| Phase 10A | Complete | 2026-07-18 | Phase 10A implemented persisted, server-controlled truck simulation for the single active route. Starting a route schedules simulated movement through Convex, while pause, resume and manual advancement use versioned state to invalidate stale scheduled executions. Trucks move discretely to the current stop, wait for manual collection or inability confirmation, advance to the next non-terminal stop, and return to the depot after the final stop. Current-stop enforcement prevents future route tasks from being terminalised, and existing Convex subscriptions update route progress and map location without browser timers. Phase 10B should build the Fleet table and truck-detail experience on the persisted truck and route state established here. |
 | Phase 10 | Pending | —               | —               |
 | Phase 11 | Pending | —               | —               |
 | Phase 12 | Pending | —               | —               |
@@ -1379,27 +1380,27 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Truck simulation
 
-* [ ] Start Truck 01 movement when its route starts.
-* [ ] Move the truck between route stops.
-* [ ] Update location at the configured interval.
-* [ ] Update route progress.
-* [ ] Update current stop.
-* [ ] Preserve completed stops.
-* [ ] Allow simulation pause.
-* [ ] Allow simulation resume.
-* [ ] Allow manual advancement to the next stop.
-* [ ] Allow manual stop completion.
-* [ ] Do not use real driver-phone location.
+* [x] Start Truck 01 movement when its route starts.
+* [x] Move the truck between route stops.
+* [x] Update location at the configured interval.
+* [x] Update route progress.
+* [x] Update current stop.
+* [x] Preserve completed stops.
+* [x] Allow simulation pause.
+* [x] Allow simulation resume.
+* [x] Allow manual advancement to the next stop.
+* [x] Allow manual stop completion.
+* [x] Do not use real driver-phone location.
 
 ## Collection progress
 
-* [ ] Display current stop.
-* [ ] Display next stop.
-* [ ] Display completed stops.
-* [ ] Display remaining stops.
-* [ ] Display progress percentage.
-* [ ] Display estimated remaining duration.
-* [ ] Update map truck position through Convex subscriptions.
+* [x] Display current stop.
+* [x] Display next stop.
+* [x] Display completed stops.
+* [x] Display remaining stops.
+* [x] Display progress percentage.
+* [x] Display estimated remaining duration.
+* [x] Update map truck position through Convex subscriptions.
 
 ## Fleet table
 
@@ -1456,15 +1457,15 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Fleet acceptance criteria
 
-* [ ] Truck movement updates route progress.
-* [ ] Truck location updates on the map.
-* [ ] Completed stops remain visible.
-* [ ] Simulation can be paused.
+* [x] Truck movement updates route progress.
+* [x] Truck location updates on the map.
+* [x] Completed stops remain visible.
+* [x] Simulation can be paused.
 * [ ] Maintenance trucks cannot be assigned.
 * [ ] Normal, Medium and High risk are visible.
 * [ ] Simulated data is clearly labelled.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 10 handoff summary is recorded.
+* [x] Checks for touched files pass.
+* [x] The Phase 10 handoff summary is recorded.
 
 ---
 

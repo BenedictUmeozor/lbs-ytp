@@ -2,10 +2,7 @@ import { ConvexError } from "convex/values";
 
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
-import {
-  calculateRouteMetrics,
-  type RouteTask,
-} from "./route_algorithm";
+import { calculateRouteMetrics, type RouteTask } from "./route_algorithm";
 import { syncLinkedReportTaskStatus } from "./task_helpers";
 import { insertActivityEvent } from "./write_helpers";
 
@@ -71,14 +68,12 @@ export async function updateTaskRouteStopStatus(
   if (stop === null) return null;
   if (task.routeId !== undefined && stop.routeId !== task.routeId)
     throw new Error("The route stop does not belong to the task route.");
-  if (
-    stop.status === status &&
-    (status !== "completed" || stop.completedAt !== undefined)
-  )
-    return stop;
+  if (["completed", "unable_to_complete"].includes(stop.status)) return stop;
   await ctx.db.patch(stop._id, {
     status,
-    ...(status === "completed" ? { completedAt: now } : {}),
+    ...(status === "completed"
+      ? { completedAt: now }
+      : { completedAt: undefined }),
   });
   return stop;
 }
@@ -138,7 +133,11 @@ export async function addTaskToProposedRoute(
     .collect();
   if (updatedStops.at(-1)?._id !== stopId)
     fail("ROUTE_STOP_UNAVAILABLE", "The route stop could not be appended.");
-  const update = await recalculateProposedRouteMetrics(ctx, route, updatedStops);
+  const update = await recalculateProposedRouteMetrics(
+    ctx,
+    route,
+    updatedStops,
+  );
   return { route: { ...route, ...update }, stopId };
 }
 
@@ -235,7 +234,10 @@ export async function removeTaskFromProposedRoute(
     );
   const route = await ctx.db.get(task.routeId);
   if (route === null || route.status !== "proposed")
-    fail("ROUTE_NOT_PROPOSED", "Only an unstarted proposed route can be changed.");
+    fail(
+      "ROUTE_NOT_PROPOSED",
+      "Only an unstarted proposed route can be changed.",
+    );
   const [stop, stops] = await Promise.all([
     ctx.db
       .query("routeStops")

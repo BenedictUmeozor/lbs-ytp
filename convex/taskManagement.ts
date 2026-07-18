@@ -9,6 +9,7 @@ import {
 } from "./_generated/server";
 import { markBinAwaitingEmptyConfirmation } from "./bins";
 import { requireFleetManager } from "./domain/auth";
+import { maybeCreateRouteReoptimisationNotification } from "./domain/route_reoptimisation_notifications";
 import {
   removeTaskFromProposedRoute,
   returnTaskToPendingFromProposedRoute,
@@ -16,7 +17,6 @@ import {
   updateTaskRouteStopStatus,
 } from "./domain/route_task_helpers";
 import { resolveLinkedReportsForCollectedTask } from "./domain/task_helpers";
-import { maybeCreateRouteReoptimisationNotification } from "./domain/route_reoptimisation_notifications";
 import {
   canCancelTask,
   canChangeTaskPriority,
@@ -24,6 +24,11 @@ import {
   canMarkTaskUnableToComplete,
   isTaskEligibleForRoute,
 } from "./domain/task_rules";
+import {
+  advanceAfterTerminalStop,
+  loadRouteStopsWithTasks,
+  resolveOperationalStop,
+} from "./domain/truck_simulation";
 import { priorityValidator } from "./domain/validators";
 import {
   insertActivityEvent,
@@ -118,6 +123,30 @@ async function taskRow(ctx: QueryCtx, task: Doc<"collectionTasks">) {
     relatedBin: source.bin,
     linkedReportCount: task.linkedReportIds.length,
   };
+}
+
+async function activeRouteTaskContext(
+  ctx: MutationCtx,
+  task: Doc<"collectionTasks">,
+) {
+  if (task.routeId === undefined) return null;
+  const route = await ctx.db.get(task.routeId);
+  if (route?.status !== "active") return null;
+  const truck = await ctx.db.get(route.truckId);
+  const stops = await loadRouteStopsWithTasks(ctx, route._id);
+  const current = resolveOperationalStop(stops);
+  if (
+    truck === null ||
+    truck.assignedRouteId !== route._id ||
+    task.assignedTruckId !== truck._id
+  )
+    fail(
+      "SIMULATION_STATE_CHANGED",
+      "Route simulation state changed; retry the action.",
+    );
+  if (current?.task._id !== task._id)
+    fail("CURRENT_STOP_REQUIRED", "Only the current stop can be completed.");
+  return { route, truck };
 }
 
 async function clearCandidateReferences(
@@ -268,11 +297,18 @@ export const getTaskDetail = query({
     const isFinalProposedStop = proposedRouteStopCount === 1;
     const assignedRouteMustStart =
       task.status === "assigned" && route?.status === "assigned";
+    const activeRouteTask = route?.status === "active";
+    const activeCurrentStop =
+      activeRouteTask && routeStop?.status === "current";
     const actionNotice = assignedRouteMustStart
       ? "Start the assigned route before marking this task unable to complete."
       : isFinalProposedStop
         ? "This is the proposal’s final stop. Cancel the proposed route instead."
-        : undefined;
+        : activeRouteTask && !activeCurrentStop
+          ? "Only the active route’s current stop can be completed."
+          : activeCurrentStop && truck?.status !== "at_collection_point"
+            ? "The truck must reach this collection point before collection can be confirmed."
+            : undefined;
     const activityHistory = await Promise.all(
       history.map(async (event) => {
         const actor =
@@ -321,12 +357,20 @@ export const getTaskDetail = query({
           isTaskEligibleForRoute(task) &&
           availableRoutes.some((routeOption) => routeOption.canAccept),
         canRemoveFromRoute:
-          task.status === "scheduled" && route?.status === "proposed" && !isFinalProposedStop,
+          task.status === "scheduled" &&
+          route?.status === "proposed" &&
+          !isFinalProposedStop,
         canMarkUnableToComplete:
-          canMarkTaskUnableToComplete(task) && !assignedRouteMustStart && !isFinalProposedStop,
+          canMarkTaskUnableToComplete(task) &&
+          !assignedRouteMustStart &&
+          !isFinalProposedStop &&
+          (!activeRouteTask || activeCurrentStop),
         canCancel: canCancelTask(task) && !isFinalProposedStop,
         actionNotice,
-        canMarkCollected: canMarkTaskCollected(task),
+        canMarkCollected:
+          canMarkTaskCollected(task) &&
+          (!activeRouteTask ||
+            (activeCurrentStop && truck?.status === "at_collection_point")),
       },
       map: {
         latitude: task.latitude,
@@ -348,7 +392,11 @@ export const updatePriority = mutation({
     if (task.priority === args.priority) return { changed: false };
     await ctx.db.patch(task._id, { priority: args.priority });
     const updatedTask = { ...task, priority: args.priority };
-    if (updatedTask.priority === "critical" && updatedTask.status === "pending" && updatedTask.routeId === undefined)
+    if (
+      updatedTask.priority === "critical" &&
+      updatedTask.status === "pending" &&
+      updatedTask.routeId === undefined
+    )
       await maybeCreateRouteReoptimisationNotification(ctx, updatedTask);
     await insertActivityEvent(
       ctx,
@@ -370,9 +418,13 @@ export const markUnableToComplete = mutation({
     if (task.status === "assigned" && task.routeId !== undefined) {
       const route = await ctx.db.get(task.routeId);
       if (route?.status === "assigned")
-        fail("ASSIGNED_ROUTE_MUST_START", "Start the assigned route before marking this task unable to complete.");
+        fail(
+          "ASSIGNED_ROUTE_MUST_START",
+          "Start the assigned route before marking this task unable to complete.",
+        );
     }
     const reason = requiredReason(args.reason);
+    const activeContext = await activeRouteTaskContext(ctx, task);
     if (!canMarkTaskUnableToComplete(task))
       fail(
         "INVALID_TASK_TRANSITION",
@@ -414,6 +466,8 @@ export const markUnableToComplete = mutation({
       "collection_task",
       task._id,
     );
+    if (activeContext !== null)
+      await advanceAfterTerminalStop(ctx, activeContext.route._id);
     await insertActivityEvent(
       ctx,
       "task_status_changed",
@@ -482,6 +536,15 @@ export const markCollected = mutation({
         "INVALID_TASK_TRANSITION",
         "Only an en-route task can be marked collected.",
       );
+    const activeContext = await activeRouteTaskContext(ctx, task);
+    if (
+      activeContext !== null &&
+      activeContext.truck.status !== "at_collection_point"
+    )
+      fail(
+        "TRUCK_NOT_AT_COLLECTION_POINT",
+        "Truck has not reached the collection point.",
+      );
     const now = Date.now();
     await ctx.db.patch(task._id, {
       status: "collected",
@@ -492,6 +555,8 @@ export const markCollected = mutation({
       await markBinAwaitingEmptyConfirmation(ctx, task);
     await resolveLinkedReportsForCollectedTask(ctx, task, user._id, now);
     await updateTaskRouteStopStatus(ctx, task, "completed", now);
+    if (activeContext !== null)
+      await advanceAfterTerminalStop(ctx, activeContext.route._id);
     await clearCandidateReferences(ctx, task._id);
     await insertActivityEvent(
       ctx,

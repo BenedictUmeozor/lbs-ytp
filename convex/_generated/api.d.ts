@@ -30,6 +30,7 @@ import type * as domain_route_task_helpers from "../domain/route_task_helpers.js
 import type * as domain_status_rules from "../domain/status_rules.js";
 import type * as domain_task_helpers from "../domain/task_helpers.js";
 import type * as domain_task_rules from "../domain/task_rules.js";
+import type * as domain_truck_simulation from "../domain/truck_simulation.js";
 import type * as domain_validators from "../domain/validators.js";
 import type * as domain_write_helpers from "../domain/write_helpers.js";
 import type * as hardware from "../hardware.js";
@@ -47,6 +48,7 @@ import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
 import type * as taskManagement from "../taskManagement.js";
 import type * as tasks from "../tasks.js";
+import type * as truckSimulation from "../truckSimulation.js";
 import type * as trucks from "../trucks.js";
 import type * as users from "../users.js";
 
@@ -79,6 +81,7 @@ declare const fullApi: ApiFromModules<{
   "domain/status_rules": typeof domain_status_rules;
   "domain/task_helpers": typeof domain_task_helpers;
   "domain/task_rules": typeof domain_task_rules;
+  "domain/truck_simulation": typeof domain_truck_simulation;
   "domain/validators": typeof domain_validators;
   "domain/write_helpers": typeof domain_write_helpers;
   hardware: typeof hardware;
@@ -96,6 +99,7 @@ declare const fullApi: ApiFromModules<{
   settings: typeof settings;
   taskManagement: typeof taskManagement;
   tasks: typeof tasks;
+  truckSimulation: typeof truckSimulation;
   trucks: typeof trucks;
   users: typeof users;
 }>;

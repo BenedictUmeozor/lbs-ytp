@@ -206,6 +206,10 @@ export default defineSchema({
     estimatedDurationMinutes: v.number(),
     trafficPenaltyMinutes: v.number(),
     roadConditionPenaltyMinutes: v.number(),
+    simulationPaused: v.optional(v.boolean()),
+    simulationVersion: v.optional(v.number()),
+    nextSimulationAt: v.optional(v.number()),
+    lastSimulationStepAt: v.optional(v.number()),
     startedAt: v.optional(v.number()),
     completedAt: v.optional(v.number()),
   })

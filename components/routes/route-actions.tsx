@@ -3,10 +3,10 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
 
-import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 
 import { getRouteActionError } from "./route-error";
 import type { RouteDetail } from "./route-types";
@@ -55,9 +55,15 @@ export function RouteActions({
             size="sm"
             disabled={running !== null}
             onClick={() => {
-              if (window.confirm("Assign this route and its tasks to the selected truck?"))
-                void act("assign", () => assign({ routeId: detail.route.id as Id<"routes"> }));
-            }} 
+              if (
+                window.confirm(
+                  "Assign this route and its tasks to the selected truck?",
+                )
+              )
+                void act("assign", () =>
+                  assign({ routeId: detail.route.id as Id<"routes"> }),
+                );
+            }}
           >
             {running === "assign" ? "Assigning…" : "Assign route"}
           </Button>
@@ -67,9 +73,15 @@ export function RouteActions({
             size="sm"
             disabled={running !== null}
             onClick={() => {
-              if (window.confirm("Start this route? Linked tasks will become en route."))
-                void act("start", () => start({ routeId: detail.route.id as Id<"routes"> }));
-            }} 
+              if (
+                window.confirm(
+                  "Start this route? Linked tasks will become en route.",
+                )
+              )
+                void act("start", () =>
+                  start({ routeId: detail.route.id as Id<"routes"> }),
+                );
+            }}
           >
             {running === "start" ? "Starting…" : "Start route"}
           </Button>
@@ -89,9 +101,15 @@ export function RouteActions({
             size="sm"
             disabled={running !== null}
             onClick={() => {
-              if (window.confirm("Complete this route? All stops and tasks must already be terminal."))
-                void act("complete", () => complete({ routeId: detail.route.id as Id<"routes"> }));
-            }} 
+              if (
+                window.confirm(
+                  "Complete this route? All stops and tasks must already be terminal.",
+                )
+              )
+                void act("complete", () =>
+                  complete({ routeId: detail.route.id as Id<"routes"> }),
+                );
+            }}
           >
             {running === "complete" ? "Completing…" : "Complete route"}
           </Button>
@@ -148,7 +166,10 @@ export function RouteActions({
       )}
 
       {detail.route.status === "active" && !actions.canComplete && (
-        <p className="text-muted-foreground text-sm">Every stop must be completed or marked unable to complete before this route can be completed.</p>
+        <p className="text-muted-foreground text-sm">
+          Complete every stop, then wait for the simulated truck to return to
+          the depot.
+        </p>
       )}
 
       {message && !cancellationOpen && (
