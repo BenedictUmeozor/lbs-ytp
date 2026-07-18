@@ -28,6 +28,7 @@ const MVP_TABLES = [
   "routes",
   "collectionTasks",
   "citizenReports",
+  "whatsappMessageEvents",
   "whatsappConversations",
   "sensorReadings",
   "devices",
@@ -76,6 +77,9 @@ async function getDatasetCounts(ctx: MutationCtx): Promise<DatasetCounts> {
     citizenReports: (await ctx.db.query("citizenReports").collect()).length,
     whatsappConversations: (
       await ctx.db.query("whatsappConversations").collect()
+    ).length,
+    whatsappMessageEvents: (
+      await ctx.db.query("whatsappMessageEvents").collect()
     ).length,
     collectionTasks: (await ctx.db.query("collectionTasks").collect()).length,
     trucks: (await ctx.db.query("trucks").collect()).length,
@@ -513,6 +517,7 @@ const datasetCountsValidator = v.object({
   sensorReadings: v.number(),
   citizenReports: v.number(),
   whatsappConversations: v.number(),
+  whatsappMessageEvents: v.number(),
   collectionTasks: v.number(),
   trucks: v.number(),
   routes: v.number(),

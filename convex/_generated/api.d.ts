@@ -33,6 +33,7 @@ import type * as domain_task_helpers from "../domain/task_helpers.js";
 import type * as domain_task_rules from "../domain/task_rules.js";
 import type * as domain_truck_simulation from "../domain/truck_simulation.js";
 import type * as domain_validators from "../domain/validators.js";
+import type * as domain_whatsapp from "../domain/whatsapp.js";
 import type * as domain_write_helpers from "../domain/write_helpers.js";
 import type * as fleetManagement from "../fleetManagement.js";
 import type * as hardware from "../hardware.js";
@@ -54,6 +55,7 @@ import type * as tasks from "../tasks.js";
 import type * as truckSimulation from "../truckSimulation.js";
 import type * as trucks from "../trucks.js";
 import type * as users from "../users.js";
+import type * as whatsapp from "../whatsapp.js";
 
 import type {
   ApiFromModules,
@@ -87,6 +89,7 @@ declare const fullApi: ApiFromModules<{
   "domain/task_rules": typeof domain_task_rules;
   "domain/truck_simulation": typeof domain_truck_simulation;
   "domain/validators": typeof domain_validators;
+  "domain/whatsapp": typeof domain_whatsapp;
   "domain/write_helpers": typeof domain_write_helpers;
   fleetManagement: typeof fleetManagement;
   hardware: typeof hardware;
@@ -108,6 +111,7 @@ declare const fullApi: ApiFromModules<{
   truckSimulation: typeof truckSimulation;
   trucks: typeof trucks;
   users: typeof users;
+  whatsapp: typeof whatsapp;
 }>;
 
 /**

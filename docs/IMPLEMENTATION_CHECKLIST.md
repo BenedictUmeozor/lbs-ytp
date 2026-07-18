@@ -59,7 +59,7 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 ## 2. Current Status
 
 * **Current phase:** Phase 11
-* **Current milestone:** Resolve D-05 — WhatsApp Test Integration
+* **Current milestone:** Phase 11A owner verification — register and test the Meta callback
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -126,12 +126,16 @@ The coding agent must not resolve these decisions independently.
 
 ### D-05 — WhatsApp test integration
 
-* [ ] Confirm access to a Meta developer application.
-* [ ] Confirm access to a WhatsApp Cloud API test number.
-* [ ] Confirm webhook verification-token handling.
-* [ ] Confirm the outbound message template limitations of the test environment.
+* [x] Use Meta WhatsApp Cloud API with its test sender and approved test recipients only.
+* [x] Use the exact `/whatsapp/webhook` endpoint on the Convex site deployment.
+* [x] Verify Meta GET challenges with the server-side verification token.
+* [x] Authenticate POST raw bodies with Web Crypto HMAC-SHA256 verification.
+* [x] Require the approved WABA, phone-number ID and WhatsApp messages field.
+* [x] Restrict Phase 11A outbound messaging to service-window foundation replies without templates or automatic retries.
+* [x] Keep all six approved WhatsApp configuration values in the Convex environment only.
+* [x] Use the Meta `messages` subscription without another backend or polling.
 * **Required before:** Phase 11
-* **Status:** Pending owner decision
+* **Status:** Approved — [D-05](decisions/D-05_WHATSAPP_TEST_INTEGRATION.md).
 
 ---
 
@@ -159,6 +163,7 @@ Update this table after completing each phase.
 | Phase 10B | Complete | 2026-07-18 | Phase 10B replaced the Fleet & Maintenance placeholder with protected live fleet and truck-detail views. The fleet table shows truck identity, status, simulated location, current assignment, remaining stops, capacity, maintenance risk and last-service date. Truck details include current route progress, terminal task history, simulated vehicle-health metrics and existing read-only maintenance alerts. Links from Overview, Map and Routes now open the relevant truck detail. The Phase 10A correction pass aligned simulation action availability with server rules, improved movement-time display and corrected checklist dependencies. Phase 10C should implement the remaining maintenance-risk behaviour, high-risk notification creation and immutable maintenance activity events. |
 | Phase 10C | Complete | 2026-07-18 | Phase 10C centralised the approved simulated maintenance scenarios in one Convex domain workflow. Medium and High scenarios now persist their prototype vehicle-health state, create deduplicated maintenance alerts and append immutable maintenance-alert activity events. High risk additionally creates one deduplicated Critical truck notification and places an eligible unreserved truck in Maintenance status. Demo reset now uses the same maintenance workflow rather than separately seeding alerts, notifications and activity records. The correction pass restored the approved five-phase simulation contract, made alert source labels data-driven and corrected Fleet table interaction semantics. No real telemetry, predictive diagnostics, alert-resolution workflow or automatic route interruption was introduced. |
 | Phase 10 | Complete | 2026-07-18 | Phase 10 delivered persisted server-controlled truck simulation and route progression from assignment through collection stops and depot return, with live map and route updates. It added the protected Fleet table and truck detail with current assignments, collection history and clearly labelled prototype vehicle-health information. Approved Medium and High simulated maintenance scenarios now create deduplicated alerts and immutable activity records, while High risk creates a deduplicated Critical truck notification and places an eligible unreserved truck in Maintenance. |
+| Phase 11A | Complete | 2026-07-18 | Secure WhatsApp transport foundation implemented with Meta GET verification, signed POST validation, expected-asset checks, idempotent immutable message/status events, per-user conversation timestamps, an asynchronous foundation reply and server-only configuration. Live Meta callback registration and end-to-end verification remain owner QA. Phase 11B should replace the temporary reply with the approved guided text and location-reporting flow while reusing the same transport and event log. |
 | Phase 11 | Pending | —               | —               |
 | Phase 12 | Pending | —               | —               |
 | Phase 13 | Pending | —               | —               |
@@ -1475,18 +1480,36 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Decision dependency
 
-* [ ] Decision D-05 has been resolved.
+* [x] Decision D-05 has been resolved.
+
+## Phase 11A — Secure transport foundation
+
+* [x] D-05 documented.
+* [x] GET verification route implemented.
+* [x] POST signature verification implemented.
+* [x] Expected WABA and phone-number ID validation implemented.
+* [x] Text, location, image and unsupported message metadata are normalised.
+* [x] Incoming messages are idempotent.
+* [x] Status notifications are idempotent and immutable.
+* [x] Conversation timestamps persist per WhatsApp user.
+* [x] Foundation replies are idempotently reserved.
+* [x] The 24-hour service-window guard is enforced.
+* [x] Outbound accepted and failed events are stored.
+* [x] Meta status events are stored without depending on delivery order.
+* [x] Credentials remain server-side.
+* [x] Targeted checks pass.
+* [x] Phase 11A handoff is recorded.
 
 ## Meta webhook
 
-* [ ] Add webhook verification.
-* [ ] Receive text-message events.
-* [ ] Receive shared-location events.
-* [ ] Receive one optional photo.
-* [ ] Validate the expected webhook source.
-* [ ] Keep Meta credentials server side.
-* [ ] Store incoming message events needed for the demo.
-* [ ] Handle unsupported messages with a clear response.
+* [x] Add webhook verification.
+* [x] Receive text-message events.
+* [ ] Receive shared-location events as a complete reporting feature.
+* [ ] Receive one optional photo as a complete reporting feature.
+* [x] Validate the expected webhook source.
+* [x] Keep Meta credentials server side.
+* [x] Store incoming message events needed for the demo.
+* [x] Handle unsupported messages with a clear response.
 
 ## Guided conversation
 

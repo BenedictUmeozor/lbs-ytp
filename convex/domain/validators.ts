@@ -91,6 +91,34 @@ export const publicReportStatusValidator = v.union(
 );
 export type PublicReportStatus = Infer<typeof publicReportStatusValidator>;
 
+export const whatsappMessageDirectionValidator = v.union(
+  v.literal("inbound"),
+  v.literal("outbound"),
+);
+export type WhatsAppMessageDirection = Infer<
+  typeof whatsappMessageDirectionValidator
+>;
+
+export const whatsappMessageTypeValidator = v.union(
+  v.literal("text"),
+  v.literal("image"),
+  v.literal("location"),
+  v.literal("unsupported"),
+);
+export type WhatsAppMessageType = Infer<typeof whatsappMessageTypeValidator>;
+
+export const whatsappEventTypeValidator = v.union(
+  v.literal("inbound_received"),
+  v.literal("outbound_queued"),
+  v.literal("outbound_accepted"),
+  v.literal("outbound_failed"),
+  v.literal("status_sent"),
+  v.literal("status_delivered"),
+  v.literal("status_read"),
+  v.literal("status_failed"),
+);
+export type WhatsAppEventType = Infer<typeof whatsappEventTypeValidator>;
+
 export const whatsappConversationStateValidator = v.union(
   v.literal("awaiting_description"),
   v.literal("awaiting_location"),

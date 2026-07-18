@@ -24,6 +24,9 @@ import {
   truckStatusValidator,
   userRoleValidator,
   whatsappConversationStateValidator,
+  whatsappEventTypeValidator,
+  whatsappMessageDirectionValidator,
+  whatsappMessageTypeValidator,
 } from "./domain/validators";
 
 export default defineSchema({
@@ -144,8 +147,41 @@ export default defineSchema({
     draftLatitude: v.optional(v.number()),
     draftLongitude: v.optional(v.number()),
     draftPhotoReference: v.optional(v.string()),
+    submittedReportId: v.optional(v.id("citizenReports")),
     lastMessageAt: v.number(),
+    lastInboundMessageAt: v.optional(v.number()),
+    lastOutboundMessageAt: v.optional(v.number()),
   }).index("by_whatsappUserId", ["whatsappUserId"]),
+
+  whatsappMessageEvents: defineTable({
+    eventKey: v.string(),
+    providerMessageId: v.optional(v.string()),
+    whatsappUserId: v.string(),
+    phoneNumberId: v.string(),
+    direction: whatsappMessageDirectionValidator,
+    eventType: whatsappEventTypeValidator,
+    messageType: v.optional(whatsappMessageTypeValidator),
+    providerMessageType: v.optional(v.string()),
+    occurredAt: v.number(),
+    recordedAt: v.number(),
+    conversationId: v.optional(v.id("whatsappConversations")),
+    relatedReportId: v.optional(v.id("citizenReports")),
+    replyToProviderMessageId: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+  })
+    .index("by_eventKey", ["eventKey"])
+    .index("by_providerMessageId_and_occurredAt", [
+      "providerMessageId",
+      "occurredAt",
+    ])
+    .index("by_whatsappUserId_and_occurredAt", ["whatsappUserId", "occurredAt"])
+    .index("by_conversationId_and_occurredAt", ["conversationId", "occurredAt"])
+    .index("by_relatedReportId_and_occurredAt", [
+      "relatedReportId",
+      "occurredAt",
+    ])
+    .index("by_replyToProviderMessageId", ["replyToProviderMessageId"]),
 
   collectionTasks: defineTable({
     displayId: v.string(),

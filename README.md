@@ -52,6 +52,23 @@ NOMINATIM_BASE_URL=https://nominatim.openstreetmap.org
 
 `GEMINI_API_KEY` and `NOMINATIM_BASE_URL` must be configured in the Convex deployment environment. Do not put either value in a `NEXT_PUBLIC_` variable; never log or commit the Gemini key.
 
+## WhatsApp test integration
+
+Set these server-only variables in the Convex deployment environment:
+
+```bash
+WHATSAPP_PHONE_NUMBER_ID
+WHATSAPP_WABA_ID
+WHATSAPP_ACCESS_TOKEN
+WHATSAPP_APP_SECRET
+WHATSAPP_WEBHOOK_VERIFY_TOKEN
+WHATSAPP_GRAPH_API_VERSION
+```
+
+The Meta callback is `<CONVEX_SITE_URL>/whatsapp/webhook`. Use the `.convex.site` URL, not `.convex.cloud`, and subscribe the webhook to the `messages` field. Test recipients must be approved in the Meta test environment. Temporary credentials and personal identifiers must not be committed or logged.
+
+Phase 11A sends only a temporary transport acknowledgement in response to a newly received message; guided report submission is not yet enabled.
+
 After setting the Convex deployment variables and enabling Clerk's Convex integration, regenerate and deploy the Convex configuration:
 
 ```bash
