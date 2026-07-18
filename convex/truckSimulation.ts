@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 
+import type { Id } from "./_generated/dataModel";
 import {
   internalMutation,
   mutation,
@@ -20,10 +21,7 @@ function fail(code: string, message: string): never {
   throw new ConvexError({ code, message });
 }
 
-async function movementState(
-  ctx: MutationCtx,
-  routeId: Parameters<typeof ctx.db.get<"routes">>[0],
-) {
+async function movementState(ctx: MutationCtx, routeId: Id<"routes">) {
   const route = await ctx.db.get(routeId);
   if (route === null || route.status !== "active")
     fail("SIMULATION_NOT_ACTIVE", "Simulation is not active.");

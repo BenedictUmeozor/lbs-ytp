@@ -174,7 +174,7 @@ function SummaryCardsGrid({ summary }: { summary: OverviewData["summary"] }) {
         label="Trucks with maintenance alerts"
         value={summary.trucksWithMaintenanceAlerts}
         icon={Wrench}
-        href="/dashboard/fleet?view=maintenance_alerts"
+        href="/dashboard/fleet"
         emphasis="critical"
       />
     </div>
@@ -251,6 +251,13 @@ function CriticalAlertsCard({
                   <Link
                     className="text-foreground text-sm font-medium underline"
                     href={`/dashboard/routes?candidate=${alert.relatedEntityId}`}
+                  >
+                    {alert.title}
+                  </Link>
+                ) : alert.relatedEntityType === "truck" ? (
+                  <Link
+                    className="text-foreground text-sm font-medium underline"
+                    href={`/dashboard/fleet?selected=${alert.relatedEntityId}`}
                   >
                     {alert.title}
                   </Link>
@@ -516,9 +523,12 @@ function VehicleHealthCard({
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-foreground text-sm font-medium">
+                      <Link
+                        href={`/dashboard/fleet?selected=${truck.id}`}
+                        className="text-foreground text-sm font-medium hover:underline"
+                      >
                         {truck.displayId}
-                      </p>
+                      </Link>
                       <StatusBadge status={truck.maintenanceRisk} />
                       <StatusBadge status={truck.status} />
                     </div>

@@ -33,6 +33,7 @@ import type * as domain_task_rules from "../domain/task_rules.js";
 import type * as domain_truck_simulation from "../domain/truck_simulation.js";
 import type * as domain_validators from "../domain/validators.js";
 import type * as domain_write_helpers from "../domain/write_helpers.js";
+import type * as fleetManagement from "../fleetManagement.js";
 import type * as hardware from "../hardware.js";
 import type * as http from "../http.js";
 import type * as maintenance from "../maintenance.js";
@@ -84,6 +85,7 @@ declare const fullApi: ApiFromModules<{
   "domain/truck_simulation": typeof domain_truck_simulation;
   "domain/validators": typeof domain_validators;
   "domain/write_helpers": typeof domain_write_helpers;
+  fleetManagement: typeof fleetManagement;
   hardware: typeof hardware;
   http: typeof http;
   maintenance: typeof maintenance;

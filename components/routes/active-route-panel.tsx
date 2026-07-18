@@ -1,3 +1,6 @@
+import Link from "next/link";
+import type { ReactNode } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RouteSimulationControls } from "./route-simulation-controls";
@@ -22,7 +25,14 @@ export function ActiveRoutePanel({ data }: { data: ActiveRouteOperations }) {
         <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <Metric
             label="Truck"
-            value={`${truck.displayId} · ${truck.driverName}`}
+            value={
+              <Link
+                href={`/dashboard/fleet?selected=${truck.id}`}
+                className="text-primary hover:underline"
+              >
+                {truck.displayId} · {truck.driverName}
+              </Link>
+            }
           />
           <Metric label="Simulation status" value={simulationLabel} />
           <Metric
@@ -35,8 +45,12 @@ export function ActiveRoutePanel({ data }: { data: ActiveRouteOperations }) {
             value={
               data.simulation.nextSimulationAt
                 ? new Intl.DateTimeFormat("en-NG", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
+                    timeZone: "Africa/Lagos",
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
                   }).format(data.simulation.nextSimulationAt)
                 : "—"
             }
@@ -104,9 +118,11 @@ function simulationStatusLabel(data: ActiveRouteOperations) {
   if (phase === "at_collection_point")
     return `At collection point ${targetLabel}`;
   if (phase === "returning_to_depot") return "Returning to Bariga depot";
-  return "Returned to depot — ready to complete";
+  if (phase === "ready_to_complete")
+    return "Returned to depot — ready to complete";
+  return "Simulation state unavailable";
 }
-function Metric({ label, value }: { label: string; value: string | number }) {
+function Metric({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <dt className="text-muted-foreground">{label}</dt>

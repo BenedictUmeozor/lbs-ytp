@@ -1,10 +1,5 @@
-import { DashboardPlaceholder } from "@/components/dashboard/dashboard-placeholder";
+import { FleetPage } from "@/components/fleet/fleet-page";
 
-export default function FleetPage() {
-  return (
-    <DashboardPlaceholder
-      title="Fleet & Maintenance"
-      description="Simulated fleet and maintenance operations will be implemented in the fleet phase."
-    />
-  );
+export default function FleetDashboardPage() {
+  return <FleetPage />;
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { StatusBadge } from "@/components/dashboard/status-badge";
 
 import type { RouteList } from "./route-types";
@@ -67,7 +69,18 @@ export function RoutesTable({
                 <StatusBadge status={route.status} />
               </td>
               <td className="p-3">
-                {route.truckDisplayId}
+                {route.truckId === undefined ? (
+                  route.truckDisplayId
+                ) : (
+                  <Link
+                    href={`/dashboard/fleet?selected=${route.truckId}`}
+                    className="text-primary font-medium hover:underline"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    {route.truckDisplayId}
+                  </Link>
+                )}
                 <br />
                 <span className="text-muted-foreground text-xs">
                   {route.driverName}

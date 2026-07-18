@@ -59,7 +59,7 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 ## 2. Current Status
 
 * **Current phase:** Phase 10
-* **Current milestone:** Fleet Table and Truck Detail
+* **Current milestone:** Prototype Maintenance Behaviour and Alerts
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -130,7 +130,7 @@ The coding agent must not resolve these decisions independently.
 * [ ] Confirm access to a WhatsApp Cloud API test number.
 * [ ] Confirm webhook verification-token handling.
 * [ ] Confirm the outbound message template limitations of the test environment.
-* **Required before:** Phase 10
+* **Required before:** Phase 11
 * **Status:** Pending owner decision
 
 ---
@@ -156,7 +156,8 @@ Update this table after completing each phase.
 | Phase 9B | Complete | 2026-07-16 | Route-builder UI is complete. Proposed routes can be generated and reviewed, and their order can be manually adjusted. Adding and removing stops recalculates route metrics. Routes can be assigned, started, cancelled while proposed, and completed when terminal; completed route history is preserved. Assigned-route tasks can no longer become unable before the route starts; final proposed-stop task actions are hidden and server protected; route lifecycle actions are locked against overlapping submissions. |
 | Phase 9C | Complete | 2026-07-16 | Active routes are visible on the Routes and Map pages. Current, next, terminal and remaining stops plus remaining metrics are derived live without new schema fields. Critical tasks create deduplicated route-review notifications. Re-optimisation requires manager preview and confirmation, keeps terminal and operational-current stops fixed, and reorders only future Pending stops. Confirmation verifies the exact previewed stop/task state and persists the exact reviewed proposed order; stop-status, task-status and priority changes invalidate stale previews. Next-stop derivation skips terminal stops, map lines preserve the real ordered sequence, and only route-reoptimisation notifications open candidate review. Confirmed candidates move through the approved lifecycle. No automatic route changes or truck movement were introduced; Phase 10 owns truck simulation and persisted route progression. |
 | Phase 10A | Complete | 2026-07-18 | Phase 10A implemented persisted, server-controlled truck simulation for the single active route. Starting a route schedules simulated movement through Convex, while pause, resume and manual advancement use versioned state to invalidate stale scheduled executions. Trucks move discretely to the current stop, wait for manual collection or inability confirmation, advance to the next non-terminal stop, and return to the depot after the final stop. Current-stop enforcement prevents future route tasks from being terminalised, and existing Convex subscriptions update route progress and map location without browser timers. Phase 10B should build the Fleet table and truck-detail experience on the persisted truck and route state established here. |
-| Phase 10 | Pending | —               | —               |
+| Phase 10B | Complete | 2026-07-18 | Phase 10B replaced the Fleet & Maintenance placeholder with protected live fleet and truck-detail views. The fleet table shows truck identity, status, simulated location, current assignment, remaining stops, capacity, maintenance risk and last-service date. Truck details include current route progress, terminal task history, simulated vehicle-health metrics and existing read-only maintenance alerts. Links from Overview, Map and Routes now open the relevant truck detail. The Phase 10A correction pass aligned simulation action availability with server rules, improved movement-time display and corrected checklist dependencies. Phase 10C should implement the remaining maintenance-risk behaviour, high-risk notification creation and immutable maintenance activity events. |
+| Phase 10 | Pending | -               | -               |
 | Phase 11 | Pending | —               | —               |
 | Phase 12 | Pending | —               | —               |
 | Phase 13 | Pending | —               | —               |
@@ -1404,54 +1405,54 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Fleet table
 
-* [ ] Display truck ID.
-* [ ] Display driver name.
-* [ ] Display status.
-* [ ] Display current location.
-* [ ] Display assigned route.
-* [ ] Display remaining stops.
-* [ ] Display capacity indicator.
-* [ ] Display maintenance risk.
-* [ ] Display last-service date.
+* [x] Display truck ID.
+* [x] Display driver name.
+* [x] Display status.
+* [x] Display current location.
+* [x] Display assigned route.
+* [x] Display remaining stops.
+* [x] Display capacity indicator.
+* [x] Display maintenance risk.
+* [x] Display last-service date.
 
 ## Truck statuses
 
-* [ ] Support Available.
-* [ ] Support Assigned.
-* [ ] Support On route.
-* [ ] Support At collection point.
-* [ ] Support Returning.
-* [ ] Support Maintenance.
-* [ ] Support Offline.
+* [x] Support Available.
+* [x] Support Assigned.
+* [x] Support On route.
+* [x] Support At collection point.
+* [x] Support Returning.
+* [x] Support Maintenance.
+* [x] Support Offline.
 
 ## Truck detail
 
-* [ ] Show truck ID.
-* [ ] Show driver.
-* [ ] Show current status.
-* [ ] Show current route.
-* [ ] Show simulated location.
-* [ ] Show collection history.
-* [ ] Show mileage since service.
-* [ ] Show last-service date.
-* [ ] Show battery status.
-* [ ] Show engine-health score.
-* [ ] Show maintenance risk.
-* [ ] Show maintenance alerts.
+* [x] Show truck ID.
+* [x] Show driver.
+* [x] Show current status.
+* [x] Show current route.
+* [x] Show simulated location.
+* [x] Show collection history.
+* [x] Show mileage since service.
+* [x] Show last-service date.
+* [x] Show battery status.
+* [x] Show engine-health score.
+* [x] Show maintenance risk.
+* [x] Show maintenance alerts.
 
 ## Prototype maintenance
 
-* [ ] Seed one normal truck.
-* [ ] Seed one medium-risk truck.
-* [ ] Seed one high-risk truck.
-* [ ] Keep the high-risk truck in Maintenance status.
-* [ ] Prevent maintenance trucks from route assignment.
-* [ ] Generate the approved medium-risk example alert.
-* [ ] Generate the approved high-risk example alert.
-* [ ] Display maintenance risk in table and detail views.
-* [ ] Display “Prototype Vehicle Health Monitoring — based on simulated data.”
-* [ ] Label every maintenance input as simulated.
-* [ ] Do not claim real predictive diagnostics.
+* [x] Seed one normal truck.
+* [x] Seed one medium-risk truck.
+* [x] Seed one high-risk truck.
+* [x] Keep the high-risk truck in Maintenance status.
+* [x] Prevent maintenance trucks from route assignment.
+* [x] Generate the approved medium-risk example alert.
+* [x] Generate the approved high-risk example alert.
+* [x] Display maintenance risk in table and detail views.
+* [x] Display "Prototype Vehicle Health Monitoring — based on simulated data."
+* [x] Label every maintenance input as simulated.
+* [x] Do not claim real predictive diagnostics.
 * [ ] Create a notification when maintenance risk becomes high.
 * [ ] Create immutable maintenance activity events.
 
@@ -1461,11 +1462,11 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 * [x] Truck location updates on the map.
 * [x] Completed stops remain visible.
 * [x] Simulation can be paused.
-* [ ] Maintenance trucks cannot be assigned.
-* [ ] Normal, Medium and High risk are visible.
-* [ ] Simulated data is clearly labelled.
+* [x] Maintenance trucks cannot be assigned.
+* [x] Normal, Medium and High risk are visible.
+* [x] Simulated data is clearly labelled.
 * [x] Checks for touched files pass.
-* [x] The Phase 10 handoff summary is recorded.
+* [ ] The Phase 10 handoff summary is recorded.
 
 ---
 

@@ -386,6 +386,7 @@ export const listRoutes = query({
           id: route._id,
           displayId: route.displayId,
           status: route.status,
+          truckId: truck?._id,
           truckDisplayId: truck?.displayId ?? "Unavailable truck",
           driverName: truck?.driverName ?? "Unavailable driver",
           stopCount: stops.length,
@@ -1003,22 +1004,54 @@ export const getActiveRouteOperations = query({
         a.displayId.localeCompare(b.displayId),
     );
     const operationalStop = resolveOperationalStop(data.stops);
+    const target =
+      operationalStop === null
+        ? {
+            kind: "depot" as const,
+            latitude: data.route.depotLatitude,
+            longitude: data.route.depotLongitude,
+          }
+        : {
+            kind: "current_stop" as const,
+            latitude: operationalStop.task.latitude,
+            longitude: operationalStop.task.longitude,
+          };
     const paused = isSimulationPaused(data.route);
-    const atDepot =
-      data.truck.latitude === data.route.depotLatitude &&
-      data.truck.longitude === data.route.depotLongitude;
+    const atTarget =
+      data.truck.latitude === target.latitude &&
+      data.truck.longitude === target.longitude;
+    const validMovingStatus =
+      (target.kind === "current_stop" && data.truck.status === "on_route") ||
+      (target.kind === "depot" && data.truck.status === "returning");
     const allTasksTerminal = data.stops.every(({ task }) =>
       ["collected", "unable_to_complete"].includes(task.status),
     );
-    const phase = paused
-      ? "paused"
-      : operationalStop !== null && data.truck.status === "at_collection_point"
-        ? "at_collection_point"
-        : operationalStop !== null
-          ? "moving_to_stop"
-          : atDepot && data.route.nextSimulationAt === undefined
-            ? "ready_to_complete"
-            : "returning_to_depot";
+    const allStopsTerminal = data.stops.every(({ stop }) =>
+      isTerminalRouteStopStatus(stop.status),
+    );
+    const readyToComplete =
+      operationalStop === null &&
+      allTasksTerminal &&
+      allStopsTerminal &&
+      data.truck.status === "returning" &&
+      atTarget &&
+      data.route.nextSimulationAt === undefined &&
+      !paused;
+    const validPendingMovement = validMovingStatus && !atTarget;
+    const phase =
+      paused && validPendingMovement
+        ? "paused"
+        : target.kind === "current_stop" &&
+            data.truck.status === "at_collection_point" &&
+            atTarget
+          ? "at_collection_point"
+          : target.kind === "current_stop" && validPendingMovement
+            ? "moving_to_stop"
+            : target.kind === "depot" && validPendingMovement
+              ? "returning_to_depot"
+              : readyToComplete
+                ? "ready_to_complete"
+                : "unavailable";
     const targetLabel = operationalStop?.task.displayId ?? "Bariga depot";
     return {
       route: {
@@ -1103,21 +1136,15 @@ export const getActiveRouteOperations = query({
         canPause:
           !paused &&
           data.route.nextSimulationAt !== undefined &&
-          ["on_route", "returning"].includes(data.truck.status),
-        canResume: paused,
-        canAdvanceNow:
-          data.truck.status === "on_route" ||
-          (data.truck.status === "returning" &&
-            (!atDepot || data.route.nextSimulationAt !== undefined)),
+          validPendingMovement,
+        canResume: paused && validPendingMovement,
+        canAdvanceNow: validPendingMovement,
         canMarkCurrentStopCollected:
           operationalStop !== null &&
-          data.truck.status === "at_collection_point",
-        canCompleteRoute:
-          operationalStop === null &&
-          allTasksTerminal &&
-          atDepot &&
-          data.route.nextSimulationAt === undefined &&
-          !paused,
+          data.truck.status === "at_collection_point" &&
+          data.truck.latitude === operationalStop.task.latitude &&
+          data.truck.longitude === operationalStop.task.longitude,
+        canCompleteRoute: readyToComplete,
       },
       candidates,
     };
