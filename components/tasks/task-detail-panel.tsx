@@ -34,6 +34,11 @@ export function TaskDetailPanel({ detail }: { detail: TaskDetail }) {
         </CardHeader>
         <CardContent className="space-y-5">
           <TaskActions detail={detail} />
+          {detail.actions.actionNotice && (
+            <p className="border-border rounded border px-3 py-2 text-sm">
+              {detail.actions.actionNotice}
+            </p>
+          )}
           <div className="grid gap-2 text-sm sm:grid-cols-2">
             <p>
               Status: <StatusBadge status={task.status} />

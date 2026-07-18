@@ -38,10 +38,10 @@ function depotIcon() {
     iconAnchor: [24, 14],
   });
 }
-function stopIcon(sequence: number, isCompleted: boolean, isSelected: boolean) {
+function stopIcon(sequence: number, isCompleted: boolean, isCurrent: boolean, isSelected: boolean) {
   return divIcon({
     className: "operations-map-stop-icon",
-    html: `<span class="${isCompleted ? "operations-map-stop-completed" : ""} ${isSelected ? "operations-map-selected" : ""}">${sequence}</span>`,
+    html: `<span class="${isCompleted ? "operations-map-stop-completed" : ""} ${isCurrent ? "operations-map-selected" : ""} ${isSelected ? "operations-map-selected" : ""}">${sequence}</span>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
@@ -143,15 +143,10 @@ export function LiveOperationsMapClient({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
       {visible.route && route !== null && (
-        <Polyline
-          positions={[
-            [route.depotLatitude, route.depotLongitude] as [number, number],
-            ...route.stops.map(
-              (stop) => [stop.latitude, stop.longitude] as [number, number],
-            ),
-          ]}
-          pathOptions={{ color: "#2563eb", weight: 3, dashArray: "6 6" }}
-        />
+        <>
+          <Polyline positions={[[route.depotLatitude, route.depotLongitude] as [number, number], ...route.stops.filter((stop) => stop.isTerminal).map((stop) => [stop.latitude, stop.longitude] as [number, number])]} pathOptions={{ color: "#6b7280", weight: 3, dashArray: "4 6" }} />
+          <Polyline positions={[[route.depotLatitude, route.depotLongitude] as [number, number], ...route.stops.filter((stop) => !stop.isTerminal).map((stop) => [stop.latitude, stop.longitude] as [number, number])]} pathOptions={{ color: "#2563eb", weight: 3, dashArray: "6 6" }} />
+        </>
       )}
       {visible.depot && (
         <Marker
@@ -249,7 +244,8 @@ export function LiveOperationsMapClient({
           position={[stop.latitude, stop.longitude]}
           icon={stopIcon(
             stop.sequenceNumber,
-            stop.status === "completed",
+            stop.isTerminal,
+            stop.isOperationalCurrent,
             selected(selection, "routeStop", stop.id),
           )}
           eventHandlers={{

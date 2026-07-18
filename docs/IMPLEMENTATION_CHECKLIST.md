@@ -58,8 +58,8 @@ Manual QA is intentionally not assigned to the coding agent in this checklist. I
 
 ## 2. Current Status
 
-* **Current phase:** Phase 9C
-* **Current milestone:** Active Route and Re-optimisation
+* **Current phase:** Phase 10
+* **Current milestone:** Truck Simulation, Fleet and Maintenance
 * **PRD status:** Approved
 * **Pilot location:** Bariga, Lagos
 * **Software cost target:** ₦0
@@ -153,8 +153,8 @@ Update this table after completing each phase.
 | Phase 7  | Complete | 2026-07-16 | Protected report actions wait for Phase 6 processing to settle and remain server-side guarded. Managers can repair incomplete classifications before confirming them, and stale action forms close after live updates invalidate their actions. Submitted GPS evidence and valid operational coordinates are shown distinctly, compact-map markers fit both points, report deep links focus the operations map safely, and automatic task workflows remain deferred to Phase 8. |
 | Phase 8  | Complete | 2026-07-16 | Automatic report-task eligibility rules are implemented for High and Critical reports with settled processing, valid operational coordinates and collection recommendations. Nearby same-category active tasks create fleet-manager review candidates instead of duplicates; managers can link the report or explicitly create a separate task. Task lifecycle transitions are centrally enforced, linked reports and smart bins are synchronised, and smart-bin collection now enters awaiting-empty-confirmation rather than claiming an empty bin. The protected Collection Tasks dashboard provides live lists, URL filters, details, lifecycle actions and proposed-route task linking. The correction pass synchronises linked report statuses when tasks enter or leave proposed routes, applies source-bin and linked-report collection updates independently, synchronises collected and unable-to-complete tasks with route stops, and clears candidate-task references when reports become terminal. Route generation and active-route orchestration remain Phase 9 scope; Phase 9 should reuse the task and proposed-route helpers rather than duplicating them. |
 | Phase 9A | Complete | 2026-07-16 | The protected route-builder query, deterministic priority-and-distance algorithm, and atomic proposed-route generation are complete. Selected tasks become scheduled, linked reports are synchronised, and protected route list/detail queries are available. A proposed route reserves its selected truck only through the route record; the truck is not assigned or status-changed yet. The correction ensures removing a proposed stop recalculates distance and duration while preserving remaining order, prevents removing the final proposed stop, returns the correct routed-task validation error, and keeps re-optimisation exclusively in Phase 9C. Adding a task to an existing proposed route now recalculates route distance and duration while preserving the existing order and appending the added task. |
-| Phase 9B | Complete | 2026-07-16 | Route-builder UI is complete. Proposed routes can be generated and reviewed, and their order can be manually adjusted. Adding and removing stops recalculates route metrics. Routes can be assigned, started, cancelled while proposed, and completed when terminal; completed route history is preserved. Active-route tracking and re-optimisation remain Phase 9C. Truck movement remains Phase 10. |
-| Phase 9C | Pending | —               | —               |
+| Phase 9B | Complete | 2026-07-16 | Route-builder UI is complete. Proposed routes can be generated and reviewed, and their order can be manually adjusted. Adding and removing stops recalculates route metrics. Routes can be assigned, started, cancelled while proposed, and completed when terminal; completed route history is preserved. Assigned-route tasks can no longer become unable before the route starts; final proposed-stop task actions are hidden and server protected; route lifecycle actions are locked against overlapping submissions. |
+| Phase 9C | Complete | 2026-07-16 | Active routes are visible on the Routes and Map pages. Current, next, terminal and remaining stops plus remaining metrics are derived live without new schema fields. Critical tasks create deduplicated route-review notifications. Re-optimisation requires manager preview and confirmation, keeps terminal and operational-current stops fixed, and reorders only future Pending stops. Confirmed candidates move through the approved lifecycle. No automatic route changes or truck movement were introduced; Phase 10 owns truck simulation and persisted route progression. |
 | Phase 10 | Pending | —               | —               |
 | Phase 11 | Pending | —               | —               |
 | Phase 12 | Pending | —               | —               |
@@ -1331,47 +1331,47 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 
 ## Active route
 
-* [ ] Display route line.
-* [ ] Display numbered stops.
-* [ ] Display current truck location.
-* [ ] Display current stop.
-* [ ] Display next stop.
-* [ ] Display completed stops.
-* [ ] Display remaining stops.
-* [ ] Display progress percentage.
-* [ ] Display estimated remaining distance.
-* [ ] Display estimated remaining duration.
+* [x] Display route line.
+* [x] Display numbered stops.
+* [x] Display current truck location.
+* [x] Display current stop.
+* [x] Display next stop.
+* [x] Display completed stops.
+* [x] Display remaining stops.
+* [x] Display progress percentage.
+* [x] Display estimated remaining distance.
+* [x] Display estimated remaining duration.
 
 ## Re-optimisation
 
-* [ ] Notify the manager when a new urgent task arrives.
-* [ ] Indicate whether the task is near the active route.
-* [ ] Require the manager to initiate re-optimisation.
-* [ ] Display the proposed new order.
-* [ ] Require explicit confirmation.
-* [ ] Preserve completed stops.
-* [ ] Reorder only remaining stops.
-* [ ] Do not change an active route automatically.
+* [x] Notify the manager when a new urgent task arrives.
+* [x] Indicate whether the task is near the active route.
+* [x] Require the manager to initiate re-optimisation.
+* [x] Display the proposed new order.
+* [x] Require explicit confirmation.
+* [x] Preserve completed stops.
+* [x] Reorder only remaining stops.
+* [x] Do not change an active route automatically.
 
 ## Product wording
 
-* [ ] Describe the feature as “AI-assisted route optimisation using urgency, fill level, distance and simulated traffic and road-condition penalties.”
-* [ ] Do not claim live Lagos traffic data.
-* [ ] Clearly label traffic penalties as simulated.
-* [ ] Clearly label road-condition penalties as simulated.
+* [x] Describe the feature as “AI-assisted route optimisation using urgency, fill level, distance and simulated traffic and road-condition penalties.”
+* [x] Do not claim live Lagos traffic data.
+* [x] Clearly label traffic penalties as simulated.
+* [x] Clearly label road-condition penalties as simulated.
 
 ## Phase 9 overall acceptance criteria
 
-* [ ] A route has one truck.
-* [ ] A route has no more than eight stops.
-* [ ] Critical tasks are prioritised.
-* [ ] Active routes do not change automatically.
-* [ ] Re-optimisation requires confirmation.
-* [ ] Completed stops remain visible.
-* [ ] One active route supports the primary demo.
-* [ ] Route generation completes quickly for eight stops.
-* [ ] Checks for touched files pass.
-* [ ] The Phase 9 handoff summary is recorded.
+* [x] A route has one truck.
+* [x] A route has no more than eight stops.
+* [x] Critical tasks are prioritised.
+* [x] Active routes do not change automatically.
+* [x] Re-optimisation requires confirmation.
+* [x] Completed stops remain visible.
+* [x] One active route supports the primary demo.
+* [x] Route generation completes quickly for eight stops.
+* [x] Checks for touched files pass.
+* [x] The Phase 9 handoff summary is recorded.
 
 ---
 

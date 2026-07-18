@@ -16,6 +16,7 @@ import {
   updateTaskRouteStopStatus,
 } from "./domain/route_task_helpers";
 import { resolveLinkedReportsForCollectedTask } from "./domain/task_helpers";
+import { maybeCreateRouteReoptimisationNotification } from "./domain/route_reoptimisation_notifications";
 import {
   canCancelTask,
   canChangeTaskPriority,
@@ -253,6 +254,25 @@ export const getTaskDetail = query({
         };
       }),
     );
+    const proposedRouteStopCount =
+      task.status === "scheduled" && route?.status === "proposed"
+        ? (
+            await ctx.db
+              .query("routeStops")
+              .withIndex("by_routeId_and_sequenceNumber", (q) =>
+                q.eq("routeId", route._id),
+              )
+              .collect()
+          ).length
+        : 0;
+    const isFinalProposedStop = proposedRouteStopCount === 1;
+    const assignedRouteMustStart =
+      task.status === "assigned" && route?.status === "assigned";
+    const actionNotice = assignedRouteMustStart
+      ? "Start the assigned route before marking this task unable to complete."
+      : isFinalProposedStop
+        ? "This is the proposal’s final stop. Cancel the proposed route instead."
+        : undefined;
     const activityHistory = await Promise.all(
       history.map(async (event) => {
         const actor =
@@ -301,9 +321,11 @@ export const getTaskDetail = query({
           isTaskEligibleForRoute(task) &&
           availableRoutes.some((routeOption) => routeOption.canAccept),
         canRemoveFromRoute:
-          task.status === "scheduled" && route?.status === "proposed",
-        canMarkUnableToComplete: canMarkTaskUnableToComplete(task),
-        canCancel: canCancelTask(task),
+          task.status === "scheduled" && route?.status === "proposed" && !isFinalProposedStop,
+        canMarkUnableToComplete:
+          canMarkTaskUnableToComplete(task) && !assignedRouteMustStart && !isFinalProposedStop,
+        canCancel: canCancelTask(task) && !isFinalProposedStop,
+        actionNotice,
         canMarkCollected: canMarkTaskCollected(task),
       },
       map: {
@@ -325,6 +347,9 @@ export const updatePriority = mutation({
       fail("TASK_TERMINAL", "Terminal tasks cannot be reprioritised.");
     if (task.priority === args.priority) return { changed: false };
     await ctx.db.patch(task._id, { priority: args.priority });
+    const updatedTask = { ...task, priority: args.priority };
+    if (updatedTask.priority === "critical" && updatedTask.status === "pending" && updatedTask.routeId === undefined)
+      await maybeCreateRouteReoptimisationNotification(ctx, updatedTask);
     await insertActivityEvent(
       ctx,
       "task_status_changed",
@@ -342,6 +367,11 @@ export const markUnableToComplete = mutation({
   handler: async (ctx, args) => {
     const { user } = await requireFleetManager(ctx);
     const task = await taskOrFail(ctx, args.taskId);
+    if (task.status === "assigned" && task.routeId !== undefined) {
+      const route = await ctx.db.get(task.routeId);
+      if (route?.status === "assigned")
+        fail("ASSIGNED_ROUTE_MUST_START", "Start the assigned route before marking this task unable to complete.");
+    }
     const reason = requiredReason(args.reason);
     if (!canMarkTaskUnableToComplete(task))
       fail(

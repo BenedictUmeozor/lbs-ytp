@@ -28,10 +28,8 @@ export function RouteActions({
   const [message, setMessage] = useState<string | null>(null);
   const [running, setRunning] = useState<string | null>(null);
 
-  const act = async (
-    action: string,
-    fn: () => Promise<unknown>,
-  ) => {
+  const act = async (action: string, fn: () => Promise<unknown>) => {
+    if (running !== null) return;
     setRunning(action);
     setMessage(null);
     try {
@@ -41,6 +39,7 @@ export function RouteActions({
       onUpdated?.();
     } catch (error) {
       setMessage(getRouteActionError(error));
+    } finally {
       setRunning(null);
     }
   };
@@ -54,7 +53,7 @@ export function RouteActions({
         {actions.canAssign && (
           <Button
             size="sm"
-            disabled={running === "assign"}
+            disabled={running !== null}
             onClick={() => {
               if (window.confirm("Assign this route and its tasks to the selected truck?"))
                 void act("assign", () => assign({ routeId: detail.route.id as Id<"routes"> }));
@@ -66,7 +65,7 @@ export function RouteActions({
         {actions.canStart && (
           <Button
             size="sm"
-            disabled={running === "start"}
+            disabled={running !== null}
             onClick={() => {
               if (window.confirm("Start this route? Linked tasks will become en route."))
                 void act("start", () => start({ routeId: detail.route.id as Id<"routes"> }));
@@ -79,6 +78,7 @@ export function RouteActions({
           <Button
             size="sm"
             variant="destructive"
+            disabled={running !== null}
             onClick={() => setShowCancel(true)}
           >
             Cancel proposal
@@ -87,7 +87,7 @@ export function RouteActions({
         {actions.canComplete && (
           <Button
             size="sm"
-            disabled={running === "complete"}
+            disabled={running !== null}
             onClick={() => {
               if (window.confirm("Complete this route? All stops and tasks must already be terminal."))
                 void act("complete", () => complete({ routeId: detail.route.id as Id<"routes"> }));
@@ -105,6 +105,7 @@ export function RouteActions({
             Reason
             <Input
               value={cancelReason}
+              disabled={running !== null}
               onChange={(e) => setCancelReason(e.target.value)}
               placeholder="Required — 3 to 240 characters"
             />
@@ -118,7 +119,7 @@ export function RouteActions({
             <Button
               size="sm"
               variant="destructive"
-              disabled={running === "cancel"}
+              disabled={running !== null}
               onClick={() =>
                 act("cancel", () =>
                   cancel({
@@ -133,6 +134,7 @@ export function RouteActions({
             <Button
               size="sm"
               variant="ghost"
+              disabled={running !== null}
               onClick={() => {
                 setShowCancel(false);
                 setCancelReason("");

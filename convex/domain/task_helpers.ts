@@ -7,6 +7,7 @@ import {
 import { isActiveTaskStatus, reportStatusForTaskStatus } from "./task_rules";
 import type { Priority, ReportCategory } from "./validators";
 import { insertActivityEvent } from "./write_helpers";
+import { maybeCreateRouteReoptimisationNotification } from "./route_reoptimisation_notifications";
 
 export async function syncLinkedReportTaskStatus(
   ctx: MutationCtx,
@@ -189,6 +190,7 @@ export async function createTaskForBin(
     taskId,
     args.actorUserId,
   );
+  await maybeCreateRouteReoptimisationNotification(ctx, task);
   return { task, created: true };
 }
 
@@ -217,5 +219,6 @@ export async function createTaskForReport(
   });
   const task = await ctx.db.get(taskId);
   if (task === null) throw new Error("Task creation failed.");
+  await maybeCreateRouteReoptimisationNotification(ctx, task);
   return task;
 }

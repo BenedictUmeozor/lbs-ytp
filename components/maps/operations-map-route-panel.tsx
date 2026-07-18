@@ -18,37 +18,31 @@ export function OperationsMapRoutePanel({
         description="The active route will appear after route generation and assignment."
       />
     );
-  const progress =
-    route.totalStops === 0
-      ? 0
-      : Math.round((route.completedStopCount / route.totalStops) * 100);
+  const current = route.stops.find((stop) => stop.isOperationalCurrent);
+  const next = route.stops.find((stop) => stop.isNext);
+  const progress = route.progressPercentage;
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium">{route.displayId}</p>
           <p className="text-muted-foreground text-sm">
-            Assigned truck {route.truckDisplayId}
+            Assigned truck {route.truckDisplayId} · static/simulated location
           </p>
         </div>
         <StatusBadge status={route.status} />
       </div>
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <Metric label="Total stops" value={route.totalStops} />
-        <Metric
-          label="Estimated distance"
-          value={`${route.estimatedDistanceKm.toFixed(1)} km`}
-        />
-        <Metric
-          label="Estimated duration"
-          value={`${route.estimatedDurationMinutes} min`}
-        />
-        <Metric
-          label="Current stop"
-          value={route.totalStops === 0 ? "—" : route.currentStopIndex + 1}
-        />
+        <Metric label="Current stop" value={current?.taskDisplayId ?? "—"} />
+        <Metric label="Next stop" value={next?.taskDisplayId ?? "—"} />
         <Metric label="Completed stops" value={route.completedStopCount} />
+        <Metric label="Unable stops" value={route.unableStopCount} />
         <Metric label="Remaining stops" value={route.remainingStopCount} />
+        <Metric label="Remaining distance" value={`${(route.remainingDistanceKm ?? 0).toFixed(1)} km`} />
+        <Metric label="Remaining duration" value={`${route.remainingEstimatedDurationMinutes ?? 0} min`} />
+        <Metric label="Simulated traffic penalty" value={`+${route.remainingTrafficPenaltyMinutes ?? 0} min`} />
+        <Metric label="Simulated road-condition penalty" value={`+${route.remainingRoadConditionPenaltyMinutes ?? 0} min`} />
       </dl>
       <div className="space-y-1">
         <div className="text-muted-foreground flex justify-between text-xs">
@@ -67,6 +61,7 @@ export function OperationsMapRoutePanel({
               <strong>{stop.sequenceNumber}.</strong> {stop.taskDisplayId}
             </span>
             <StatusBadge status={stop.status} />
+            {stop.isOperationalCurrent ? " current" : stop.isNext ? " next" : stop.isTerminal ? " terminal" : " upcoming"}
           </li>
         ))}
       </ol>

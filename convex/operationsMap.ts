@@ -8,6 +8,8 @@ import {
   getRouteOperationalRecord,
 } from "./domain/read_helpers";
 import { hasOperationalReportLocation } from "./domain/report_rules";
+import { calculateRemainingRouteMetrics, splitRouteStops } from "./domain/route_reoptimisation";
+import { isTerminalRouteStopStatus } from "./domain/route_rules";
 import {
   binStatusValidator,
   dataSourceValidator,
@@ -105,7 +107,17 @@ const mapDataValidator = v.object({
       currentStopIndex: v.number(),
       totalStops: v.number(),
       completedStopCount: v.number(),
+      unableStopCount: v.number(),
+      terminalStopCount: v.number(),
       remainingStopCount: v.number(),
+      progressPercentage: v.number(),
+      operationalCurrentStopId: v.optional(v.id("routeStops")),
+      nextStopId: v.optional(v.id("routeStops")),
+      remainingDistanceKm: v.optional(v.number()),
+      remainingBaseTravelMinutes: v.optional(v.number()),
+      remainingTrafficPenaltyMinutes: v.optional(v.number()),
+      remainingRoadConditionPenaltyMinutes: v.optional(v.number()),
+      remainingEstimatedDurationMinutes: v.optional(v.number()),
       stops: v.array(
         v.object({
           id: v.id("routeStops"),
@@ -118,6 +130,10 @@ const mapDataValidator = v.object({
           latitude: v.number(),
           longitude: v.number(),
           completedAt: v.optional(v.number()),
+          isTerminal: v.boolean(),
+          isOperationalCurrent: v.boolean(),
+          isNext: v.boolean(),
+          isRemaining: v.boolean(),
         }),
       ),
     }),
@@ -167,8 +183,16 @@ async function getMapData(ctx: QueryCtx) {
       ? null
       : (() => {
           const { route: currentRoute, stops } = activeRouteRecord;
+          const split = splitRouteStops(stops);
+          const currentIndex = split.operationalCurrentIndex;
           const completedStopCount = stops.filter(
             ({ stop }) => stop.status === "completed",
+          ).length;
+          const unableStopCount = stops.filter(
+            ({ stop }) => stop.status === "unable_to_complete",
+          ).length;
+          const terminalStopCount = stops.filter(({ stop }) =>
+            isTerminalRouteStopStatus(stop.status),
           ).length;
           const truck = trucks.find(
             (item) => item._id === currentRoute.truckId,
@@ -177,6 +201,18 @@ async function getMapData(ctx: QueryCtx) {
             throw new Error(
               `Route ${currentRoute._id} references a missing truck.`,
             );
+          const remaining =
+            split.operationalCurrent === null
+              ? null
+              : calculateRemainingRouteMetrics(
+                  truck,
+                  split.operationalCurrent,
+                  split.futurePending.map(({ task }) => ({ id: task._id, displayId: task.displayId, latitude: task.latitude, longitude: task.longitude, priority: task.priority })),
+                  stops.length,
+                  stops.length - terminalStopCount,
+                  currentRoute.trafficPenaltyMinutes,
+                  currentRoute.roadConditionPenaltyMinutes,
+                );
           return {
             id: currentRoute._id,
             displayId: currentRoute.displayId,
@@ -190,8 +226,18 @@ async function getMapData(ctx: QueryCtx) {
             currentStopIndex: currentRoute.currentStopIndex,
             totalStops: stops.length,
             completedStopCount,
-            remainingStopCount: stops.length - completedStopCount,
-            stops: stops.map(({ stop, task }) => ({
+            unableStopCount,
+            terminalStopCount,
+            remainingStopCount: stops.length - terminalStopCount,
+            progressPercentage: stops.length === 0 ? 0 : Math.round((terminalStopCount / stops.length) * 100),
+            operationalCurrentStopId: split.operationalCurrent?.stop._id,
+            nextStopId: currentIndex < 0 ? undefined : stops.at(currentIndex + 1)?.stop._id,
+            remainingDistanceKm: remaining?.remainingDistanceKm,
+            remainingBaseTravelMinutes: remaining?.baseTravelMinutes,
+            remainingTrafficPenaltyMinutes: remaining?.remainingTrafficPenaltyMinutes,
+            remainingRoadConditionPenaltyMinutes: remaining?.remainingRoadConditionPenaltyMinutes,
+            remainingEstimatedDurationMinutes: remaining?.remainingEstimatedDurationMinutes,
+            stops: stops.map(({ stop, task }, index) => ({
               id: stop._id,
               sequenceNumber: stop.sequenceNumber,
               status: stop.status,
@@ -202,6 +248,10 @@ async function getMapData(ctx: QueryCtx) {
               latitude: task.latitude,
               longitude: task.longitude,
               completedAt: stop.completedAt,
+              isTerminal: isTerminalRouteStopStatus(stop.status),
+              isOperationalCurrent: index === currentIndex,
+              isNext: index === currentIndex + 1,
+              isRemaining: index >= currentIndex && !isTerminalRouteStopStatus(stop.status),
             })),
           };
         })();

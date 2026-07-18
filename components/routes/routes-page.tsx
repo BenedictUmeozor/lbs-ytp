@@ -20,6 +20,9 @@ import { SummaryCard } from "@/components/dashboard/summary-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/convex/_generated/api";
 
+import { ActiveRoutePanel } from "./active-route-panel";
+import { ReoptimisationCandidates } from "./reoptimisation-candidates";
+import { ReoptimisationPreview } from "./reoptimisation-preview";
 import { RouteBuilder } from "./route-builder";
 import { RouteDetailPanel } from "./route-detail-panel";
 import { ROUTE_STATUSES, type RouteStatusFilter } from "./route-types";
@@ -30,6 +33,7 @@ export function RoutesPage() {
   const params = useSearchParams();
   const selectedId = params.get("selected");
   const rawStatus = params.get("status");
+  const candidateId = params.get("candidate");
 
   const status = ROUTE_STATUSES.includes(rawStatus as RouteStatusFilter)
     ? (rawStatus as RouteStatusFilter)
@@ -46,7 +50,12 @@ export function RoutesPage() {
       : { routeId: selectedId },
   );
 
+  const activeOperations = useQuery(
+    api.routeManagement.getActiveRouteOperations,
+    authLoading || !isAuthenticated ? "skip" : {},
+  );
   const [showBuilder, setShowBuilder] = useState(false);
+  const [reviewCandidateId, setReviewCandidateId] = useState<string | null>(null);
 
   const update = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams(params.toString());
@@ -78,6 +87,11 @@ export function RoutesPage() {
       </div>
     );
   if (routes === undefined) return <RoutesSkeleton />;
+
+  const activeRoute = activeOperations ?? null;
+  const selectedCandidate = activeRoute?.candidates.find(
+    (candidate) => candidate.id === (reviewCandidateId ?? candidateId),
+  );
 
   const filtered = routes.filter(
     (r) => status === "all" || r.status === status,
@@ -130,6 +144,26 @@ export function RoutesPage() {
           href="/dashboard/routes?status=completed"
         />
       </div>
+
+      {activeRoute && (
+        <div className="space-y-4">
+          <ActiveRoutePanel data={activeRoute} />
+          <ReoptimisationCandidates
+            candidates={activeRoute.candidates}
+            onReview={(candidate) => setReviewCandidateId(candidate.id)}
+          />
+          {selectedCandidate && (
+            <ReoptimisationPreview
+              route={activeRoute}
+              candidate={selectedCandidate}
+              onClose={() => {
+                setReviewCandidateId(null);
+                if (candidateId) update({ candidate: null });
+              }}
+            />
+          )}
+        </div>
+      )}
 
       {showBuilder ? (
         <RouteBuilder onCreated={onRouteCreated} />

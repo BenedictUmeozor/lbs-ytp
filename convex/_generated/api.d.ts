@@ -23,6 +23,8 @@ import type * as domain_report_rules from "../domain/report_rules.js";
 import type * as domain_report_task_evaluation from "../domain/report_task_evaluation.js";
 import type * as domain_report_triage from "../domain/report_triage.js";
 import type * as domain_route_algorithm from "../domain/route_algorithm.js";
+import type * as domain_route_reoptimisation from "../domain/route_reoptimisation.js";
+import type * as domain_route_reoptimisation_notifications from "../domain/route_reoptimisation_notifications.js";
 import type * as domain_route_rules from "../domain/route_rules.js";
 import type * as domain_route_task_helpers from "../domain/route_task_helpers.js";
 import type * as domain_status_rules from "../domain/status_rules.js";
@@ -70,6 +72,8 @@ declare const fullApi: ApiFromModules<{
   "domain/report_task_evaluation": typeof domain_report_task_evaluation;
   "domain/report_triage": typeof domain_report_triage;
   "domain/route_algorithm": typeof domain_route_algorithm;
+  "domain/route_reoptimisation": typeof domain_route_reoptimisation;
+  "domain/route_reoptimisation_notifications": typeof domain_route_reoptimisation_notifications;
   "domain/route_rules": typeof domain_route_rules;
   "domain/route_task_helpers": typeof domain_route_task_helpers;
   "domain/status_rules": typeof domain_status_rules;

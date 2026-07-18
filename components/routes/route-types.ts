@@ -9,6 +9,13 @@ export type RouteList = FunctionReturnType<typeof api.routeManagement.listRoutes
 export type RouteDetail = NonNullable<
   FunctionReturnType<typeof api.routeManagement.getRouteDetail>
 >;
+export type ActiveRouteOperations = NonNullable<
+  FunctionReturnType<typeof api.routeManagement.getActiveRouteOperations>
+>;
+export type ReoptimisationCandidate = ActiveRouteOperations["candidates"][number];
+export type ReoptimisationPreview = FunctionReturnType<
+  typeof api.routeManagement.getReoptimisationPreview
+>;
 
 export const ROUTE_STATUSES = [
   "all",

@@ -45,14 +45,15 @@ export function TaskActions({ detail }: { detail: TaskDetail }) {
     return <CollectedForm detail={detail} onClose={() => setForm(null)} />;
   return (
     <div className="flex flex-wrap gap-2">
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={!detail.actions.canEditPriority}
-        onClick={() => setForm("priority")}
-      >
-        Edit priority
-      </Button>
+      {detail.actions.canEditPriority && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setForm("priority")}
+        >
+          Edit priority
+        </Button>
+      )}
       {(detail.actions.canAssignToRoute ||
         detail.actions.canRemoveFromRoute) && (
         <Button size="sm" variant="outline" onClick={() => setForm("route")}>
@@ -61,29 +62,29 @@ export function TaskActions({ detail }: { detail: TaskDetail }) {
             : "Assign to proposed route"}
         </Button>
       )}
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={!detail.actions.canMarkUnableToComplete}
-        onClick={() => setForm("unable")}
-      >
-        Unable to complete
-      </Button>
-      <Button
-        size="sm"
-        variant="destructive"
-        disabled={!detail.actions.canCancel}
-        onClick={() => setForm("cancel")}
-      >
-        Cancel
-      </Button>
-      <Button
-        size="sm"
-        disabled={!detail.actions.canMarkCollected}
-        onClick={() => setForm("collected")}
-      >
-        Mark collected
-      </Button>
+      {detail.actions.canMarkUnableToComplete && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setForm("unable")}
+        >
+          Unable to complete
+        </Button>
+      )}
+      {detail.actions.canCancel && (
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => setForm("cancel")}
+        >
+          Cancel
+        </Button>
+      )}
+      {detail.actions.canMarkCollected && (
+        <Button size="sm" onClick={() => setForm("collected")}>
+          Mark collected
+        </Button>
+      )}
     </div>
   );
 }
