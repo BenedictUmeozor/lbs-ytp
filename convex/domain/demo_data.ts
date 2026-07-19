@@ -45,7 +45,7 @@ type DemoBin = {
 
 export const demoBins: readonly DemoBin[] = [
   {
-    displayId: "BG-001",
+    displayId: "BIN-001",
     name: "Bariga Market Smart Bin",
     address: "Bariga Market, Jagunmolu Street, Bariga",
     latitude: 6.5368,
@@ -57,14 +57,14 @@ export const demoBins: readonly DemoBin[] = [
     readings: [35, 40, 45],
   },
   {
-    displayId: "BG-002",
+    displayId: "BIN-002",
     name: "Pedro Bus Stop Bin",
     address: "Pedro Bus Stop, Bariga",
     latitude: 6.5354,
     longitude: 3.3912,
     currentFillPercentage: 88,
     status: "collection_required",
-    source: "simulated",
+    source: "real",
     awaitingEmptyConfirmation: false,
     readings: [70, 80, 88],
   },
@@ -168,19 +168,25 @@ export const demoBins: readonly DemoBin[] = [
 
 type DemoDevice = {
   deviceIdentifier: string;
-  binDisplayId: string;
+  binDisplayIds: readonly string[];
   source: DataSource;
   status: DeviceStatus;
 };
 
-export const demoDevices: readonly DemoDevice[] = demoBins.map(
-  (bin, index) => ({
-    deviceIdentifier: `device-${String(index + 1).padStart(3, "0")}`,
-    binDisplayId: bin.displayId,
-    source: bin.source,
+export const demoDevices: readonly DemoDevice[] = [
+  {
+    deviceIdentifier: "DEVICE-001",
+    binDisplayIds: ["BIN-001", "BIN-002"],
+    source: "real",
     status: "online",
-  }),
-);
+  },
+  ...demoBins.slice(2).map((bin, index) => ({
+    deviceIdentifier: `device-${String(index + 3).padStart(3, "0")}`,
+    binDisplayIds: [bin.displayId],
+    source: bin.source,
+    status: "online" as const,
+  })),
+];
 
 type DemoTruck = {
   displayId: string;
@@ -386,7 +392,7 @@ export const demoTasks: readonly DemoTask[] = [
   {
     displayId: "CT-002",
     sourceType: "smart_bin",
-    sourceBinDisplayId: "BG-002",
+    sourceBinDisplayId: "BIN-002",
     linkedReportReferences: [],
     latitude: 6.5354,
     longitude: 3.3912,
@@ -454,10 +460,10 @@ export const demoNotifications: readonly {
   {
     type: "bin_collection_required",
     severity: "warning",
-    title: "BG-002 requires collection",
+    title: "BIN-002 requires collection",
     description: "Pedro Bus Stop Bin reached 88% fill.",
     relatedEntityType: "bin",
-    relatedEntityKey: "BG-002",
+    relatedEntityKey: "BIN-002",
   },
   {
     type: "critical_report",

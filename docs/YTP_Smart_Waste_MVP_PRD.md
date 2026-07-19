@@ -263,7 +263,7 @@ Pending collection tasks
 The system will include:
 
 - 10 smart bins in Bariga.
-- 1 real hardware-connected bin.
+- 2 real hardware-connected bins served by 1 device.
 - 9 simulated bins.
 - 3 simulated trucks.
 - 6 preloaded citizen reports.
@@ -970,8 +970,8 @@ The smart-bin device sends:
 
 ```json
 {
-  "deviceId": "device-001",
-  "binId": "BG-001",
+  "deviceId": "DEVICE-001",
+  "binId": "BIN-001",
   "fillPercentage": 84,
   "recordedAt": "2026-07-16T11:30:00Z"
 }
@@ -979,7 +979,7 @@ The smart-bin device sends:
 
 ## 13.2 Hardware Endpoint
 
-The prototype sends an HTTPS `POST` request directly to a Convex HTTP action. The endpoint is intentionally unauthenticated for the controlled MVP: no API key, secret or authentication header is required. It still validates the submitted payload, device, bin and device-to-bin relationship. This is not production secure; a production deployment would require device authentication and abuse protection.
+The prototype sends an HTTPS `POST` request directly to a Convex HTTP action. `DEVICE-001` may submit readings for `BIN-001` and `BIN-002`; identifiers are case-sensitive. The endpoint is intentionally unauthenticated for the controlled MVP: no API key, secret or authentication header is required. It still validates the submitted payload, device, bin and device-to-bin relationship. This is not production secure; a production deployment would require device authentication and abuse protection.
 
 ## 13.3 Processing Rules
 
@@ -1887,7 +1887,7 @@ These controls are for demonstration only and must not appear in the public app.
 
 2. The map shows 10 bins, 3 trucks, citizen reports and one depot.
 
-3. The real hardware bin starts at 45% and appears green.
+3. The `BIN-001` real hardware bin starts at 45% and appears green.
 
 4. Waste is placed in the physical bin.
 

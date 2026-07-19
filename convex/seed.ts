@@ -202,11 +202,11 @@ async function insertDemoDataset(
     binIds.set(bin.displayId, binId);
   }
 
-  const deviceIds = new Map<string, Id<"devices">>();
+  const deviceIdsByBin = new Map<string, Id<"devices">>();
   for (const device of demoDevices) {
-    const assignedBinId = binIds.get(device.binDisplayId);
+    const assignedBinId = binIds.get(device.binDisplayIds[0]);
     if (assignedBinId === undefined) {
-      throw new Error(`Missing seeded bin ${device.binDisplayId}.`);
+      throw new Error(`Missing seeded bin ${device.binDisplayIds[0]}.`);
     }
 
     const deviceId = await ctx.db.insert("devices", {
@@ -216,25 +216,22 @@ async function insertDemoDataset(
       lastSeenAt: now - MINUTE_IN_MILLISECONDS,
       source: device.source,
     });
-    deviceIds.set(device.deviceIdentifier, deviceId);
-  }
 
-  for (const device of demoDevices) {
-    const binId = binIds.get(device.binDisplayId);
-    const deviceId = deviceIds.get(device.deviceIdentifier);
-    if (binId === undefined || deviceId === undefined) {
-      throw new Error(
-        `Missing seeded device relationship for ${device.deviceIdentifier}.`,
-      );
+    for (const binDisplayId of device.binDisplayIds) {
+      const binId = binIds.get(binDisplayId);
+      if (binId === undefined) {
+        throw new Error(`Missing seeded bin ${binDisplayId}.`);
+      }
+      deviceIdsByBin.set(binDisplayId, deviceId);
+      await ctx.db.patch("bins", binId, { deviceId });
     }
-    await ctx.db.patch("bins", binId, { deviceId });
   }
 
   const readingIds = new Map<string, Id<"sensorReadings">>();
   const readingOffsets = [60, 30, 1] as const;
-  for (const [index, bin] of demoBins.entries()) {
+  for (const bin of demoBins) {
     const binId = binIds.get(bin.displayId);
-    const deviceId = deviceIds.get(demoDevices[index].deviceIdentifier);
+    const deviceId = deviceIdsByBin.get(bin.displayId);
     if (binId === undefined || deviceId === undefined) {
       throw new Error(
         `Missing seeded reading relationship for ${bin.displayId}.`,
@@ -397,16 +394,16 @@ async function insertDemoDataset(
   await insertActivityEvent(
     ctx,
     "sensor_reading_received",
-    "Latest reading received from BG-001.",
+    "Latest reading received from BIN-001.",
     "sensor_reading",
-    requireId(readingIds.get("BG-001"), "BG-001 reading"),
+    requireId(readingIds.get("BIN-001"), "BIN-001 reading"),
   );
   await insertActivityEvent(
     ctx,
     "sensor_reading_received",
-    "Latest reading received from BG-002.",
+    "Latest reading received from BIN-002.",
     "sensor_reading",
-    requireId(readingIds.get("BG-002"), "BG-002 reading"),
+    requireId(readingIds.get("BIN-002"), "BIN-002 reading"),
   );
   await insertActivityEvent(
     ctx,
@@ -418,9 +415,9 @@ async function insertDemoDataset(
   await insertActivityEvent(
     ctx,
     "bin_status_changed",
-    "BG-002 reached collection required.",
+    "BIN-002 reached collection required.",
     "bin",
-    requireId(binIds.get("BG-002"), "BG-002 bin"),
+    requireId(binIds.get("BIN-002"), "BIN-002 bin"),
     undefined,
     "approaching_full",
     "collection_required",
@@ -473,7 +470,7 @@ async function insertDemoDataset(
   await insertActivityEvent(
     ctx,
     "task_created",
-    "CT-002 was created from BG-002.",
+    "CT-002 was created from BIN-002.",
     "collection_task",
     requireId(taskIds.get("CT-002"), "CT-002 task"),
   );

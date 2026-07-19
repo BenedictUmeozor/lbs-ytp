@@ -148,7 +148,7 @@ Update this table after completing each phase.
 | Phase 0  | Complete | 2026-07-15 | Phase 0 established the PRD and implementation checklist as the project’s scope controls. The README now links to both documents, distinguishes real, simulated and future-only capabilities, and records that unresolved product or architecture decisions require owner approval. |
 | Phase 1A | Complete | 2026-07-15 | Phase 1A established the project foundation. Convex is installed and connected through a dedicated client provider, generated Convex types are available, shadcn/ui is initialized for Tailwind CSS v4 without UI components, and environment-variable handling is documented safely. No schema, domain logic, seed data, authentication or product UI has been implemented. Phase 1B should begin by defining the Convex schema, indexes, domain status constants and allowed status transitions from the approved PRD. The current shadcn CLI’s Radix Nova style was used with explicit product-owner approval because the originally planned New York style was unavailable. |
 | Phase 1B | Complete | 2026-07-15 | Phase 1B defined the complete Convex schema for the approved MVP, including 14 typed tables, required relationships, reusable domain validators, targeted indexes, approved task-status transitions and safe public report-status mapping. Convex types were regenerated successfully. No records, seed logic, queries, mutations, actions, authentication or product UI were added. Phase 1C should create the idempotent Bariga demo dataset and the typed queries and minimal mutations required by the Overview and later operational phases. |
-| Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains one fleet-manager user, 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 17 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
+| Phase 1C | Complete | 2026-07-15 | Phase 1C completed the Convex data foundation with an idempotent Bariga demo dataset, protected reset support, typed private operational queries, a restricted public report-tracking query, Overview and map aggregates, notification acknowledgement, validated settings updates and immutable settings-change activity history. The approved reset state contains one fleet-manager user, 10 bins, nine devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 17 activity events and global settings, with no active route. Phase 2 must resolve fleet-manager authentication before exposing private dashboard functions to the browser, then build the dashboard shell and Overview UI. |
 | Phase 2  | Complete | 2026-07-15 | Phase 2A implemented the Clerk and Convex authentication foundation: restricted manual demo-account flow, normalized Convex fleet-manager authorization, protected `/dashboard` routes, sign-in/sign-out, and a safe current-user query. Phase 2B built the persistent dashboard shell, reusable dashboard UI primitives, one authenticated real-time `dashboard.getOverviewData` query protected by `requireFleetManager()`, the complete Overview page with a non-interactive OpenStreetMap/Leaflet preview, and protected placeholder pages for every later dashboard section. The correction pass improved authentication failure handling, generic runtime errors, empty states and shared map data loading. Phase 3 should extend the reusable Leaflet map foundation into the full interactive operations map. |
 | Phase 3  | Complete | 2026-07-15 | Dedicated protected map query with live Convex subscriptions, an interactive Leaflet map, bins/reports/trucks/depot/route layers, filters and search, live selected-item details, a keyboard-accessible operational list, and read-only active-route rendering. Route re-optimisation remains Phase 9; stop completion remains Phase 10. |
 | Phase 4  | Complete | 2026-07-15 | Smart Bins provides a protected live list/detail view, public controlled-MVP hardware ingestion with payload and assignment validation, automatic task rules, real-device offline evaluation, and auditable manual/sensor emptying confirmation. The correction pass preserves awaiting-confirmation state, restores connectivity for delayed readings, rejects conflicting duplicates, safely handles invalid selected-bin URLs, fixes authentication-state ordering, and records sensor-confirmed status history. The final correction resets bin-specific UI state when selection changes, uses structured Convex application errors for hardware-domain failures, and corrects the real-device payload example. The awaiting-confirmation helper is ready, but its invocation from the later Collection Tasks “mark task collected” mutation remains deferred. |
@@ -470,14 +470,14 @@ Update this table after completing each phase.
 
 # Phase 1C — Demo Dataset, Core Queries and Mutations
 
-Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now available through idempotent internal seed and reset mutations. The starting state contains one fleet-manager user, 10 bins, 10 devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 17 activity events and global settings. No route exists initially so the primary demonstration can show route generation. Phase 1C-B must add typed core queries, safe public report lookup, overview/map aggregates, notification and settings mutations, and audit-preserving write operations.
+Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now available through idempotent internal seed and reset mutations. The starting state contains one fleet-manager user, 10 bins, nine devices, 30 readings, six reports, five tasks, three simulated trucks, two maintenance alerts, five notifications, 17 activity events and global settings. No route exists initially so the primary demonstration can show route generation. Phase 1C-B must add typed core queries, safe public report lookup, overview/map aggregates, notification and settings mutations, and audit-preserving write operations.
 
 ## Seed dataset
 
 * [x] Seed exactly 10 smart bins in Bariga.
-* [x] Mark one bin as the real hardware-connected bin.
-* [x] Mark nine bins as simulated.
-* [x] Seed one device for the real hardware bin.
+* [x] Mark two bins as real hardware-connected bins.
+* [x] Mark eight bins as simulated.
+* [x] Seed one device shared by the two real hardware bins.
 * [x] Seed simulated devices where needed for demo behaviour.
 * [x] Seed exactly three simulated trucks.
 * [x] Seed Truck 01 as available for the main route.
@@ -1743,8 +1743,8 @@ Phase 1C-A handoff — 2026-07-15: The approved Bariga demo dataset is now avail
 * [ ] The operations map shows three trucks.
 * [ ] The operations map shows citizen reports.
 * [ ] The operations map shows one depot.
-* [ ] The real hardware bin begins at 45%.
-* [ ] The real hardware bin appears Normal.
+* [ ] The `BIN-001` real hardware bin begins at 45%.
+* [ ] The `BIN-001` real hardware bin appears Normal.
 * [ ] Truck 01 is available.
 * [ ] Truck 02 has Medium maintenance risk.
 * [ ] Truck 03 has High maintenance risk and is unavailable.

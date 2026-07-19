@@ -59,7 +59,7 @@ export const ingestReading = internalMutation({
       .unique();
     if (bin === null)
       throw new ConvexError({ code: "NOT_FOUND", message: "Unknown bin." });
-    if (device.assignedBinId !== bin._id)
+    if (bin.deviceId !== device._id)
       throw new ConvexError({
         code: "CONFLICT",
         message: "Device is not assigned to this bin.",
@@ -77,19 +77,16 @@ export const ingestReading = internalMutation({
 
     const duplicate = await ctx.db
       .query("sensorReadings")
-      .withIndex("by_deviceId_and_recordedAt", (q) =>
-        q.eq("deviceId", device._id).eq("recordedAt", args.recordedAt),
+      .withIndex("by_binId_and_recordedAt", (q) =>
+        q.eq("binId", bin._id).eq("recordedAt", args.recordedAt),
       )
       .unique();
     if (duplicate !== null) {
-      if (
-        duplicate.binId !== bin._id ||
-        duplicate.fillPercentage !== args.fillPercentage
-      )
+      if (duplicate.fillPercentage !== args.fillPercentage)
         throw new ConvexError({
           code: "CONFLICT",
           message:
-            "A different reading already exists for this device and recordedAt value.",
+            "A different reading already exists for this bin and recordedAt value.",
         });
       return {
         duplicate: true,
@@ -104,8 +101,8 @@ export const ingestReading = internalMutation({
 
     const previous = await ctx.db
       .query("sensorReadings")
-      .withIndex("by_deviceId_and_recordedAt", (q) =>
-        q.eq("deviceId", device._id).lt("recordedAt", args.recordedAt),
+      .withIndex("by_binId_and_recordedAt", (q) =>
+        q.eq("binId", bin._id).lt("recordedAt", args.recordedAt),
       )
       .order("desc")
       .first();

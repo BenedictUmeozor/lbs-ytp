@@ -11,7 +11,7 @@ The PRD controls product scope. Unresolved product or architecture decisions in 
 
 ## MVP capability boundaries
 
-**Real capabilities when implemented:** one physical smart-bin input, Convex real-time updates, WhatsApp test reporting, public web reporting, landmark geocoding, and AI-assisted report triage.
+**Real capabilities when implemented:** one physical device serving two smart-bin inputs, Convex real-time updates, WhatsApp test reporting, public web reporting, landmark geocoding, and AI-assisted report triage.
 
 **Simulated capabilities when implemented:** additional bins, trucks, truck movement, traffic and road-condition penalties, vehicle-health data, maintenance alerts, and demo activity history.
 
@@ -51,6 +51,10 @@ NOMINATIM_BASE_URL=https://nominatim.openstreetmap.org
 ```
 
 `GEMINI_API_KEY` and `NOMINATIM_BASE_URL` must be configured in the Convex deployment environment. Do not put either value in a `NEXT_PUBLIC_` variable; never log or commit the Gemini key.
+
+## Hardware readings
+
+Send HTTPS `POST` requests to `<CONVEX_SITE_URL>/hardware/readings`. The controlled MVP accepts `DEVICE-001` for either `BIN-001` or `BIN-002`; identifiers are case-sensitive. The endpoint is intentionally unauthenticated and is not production secure.
 
 ## WhatsApp test integration
 
